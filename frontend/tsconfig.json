@@ -9,6 +9,8 @@
     }
   ],
   "compilerOptions": {
+    "baseUrl": ".",
+    "sourceMap": true,
     "paths": {
       "@/*": ["./src/*"]
     }
