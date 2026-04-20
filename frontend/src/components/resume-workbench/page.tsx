@@ -28,8 +28,8 @@ function buildResumeFromJob(job: SavedJob, currentData: ResumeData): ResumeData 
 }
 
 export function ResumeWorkbenchPage() {
-  const { profile } = useProfileSettings()
-  const [jobs, setJobs] = useState<SavedJob[]>(savedJobs)
+  const { profile, education } = useProfileSettings()
+  const jobs = savedJobs
   const [selectedJobId, setSelectedJobId] = useState(savedJobs[0]?.id ?? "")
   const [resumeData, setResumeData] = useState(() =>
     buildResumeFromJob(savedJobs[0], initialResumeData),
@@ -52,20 +52,13 @@ export function ResumeWorkbenchPage() {
     setResumeData((currentData) => buildResumeFromJob(job, currentData))
   }
 
-  function handleReorderJobs(nextJobs: SavedJob[]) {
-    setJobs(nextJobs)
-  }
-
   const previewData = useMemo<ResumeData>(
     () => ({
       ...resumeData,
-      name: profile.name,
-      email: profile.email,
-      phone: profile.phone,
-      github: profile.github,
-      linkedin: profile.linkedin,
+      profile: profile,
+      education: education
     }),
-    [profile, resumeData],
+    [profile, resumeData, education],
   )
 
   return (
@@ -77,7 +70,6 @@ export function ResumeWorkbenchPage() {
               jobs={jobs}
               selectedJobId={selectedJobId}
               onSelectJob={handleSelectJob}
-              onReorderJobs={handleReorderJobs}
             />
             <ResumeForm data={resumeData} onChange={setResumeData} />
             <ResumePreview data={previewData} />
@@ -98,7 +90,6 @@ export function ResumeWorkbenchPage() {
                 jobs={jobs}
                 selectedJobId={selectedJobId}
                 onSelectJob={handleSelectJob}
-                onReorderJobs={handleReorderJobs}
               />
             </div>
           </ResizablePanel>

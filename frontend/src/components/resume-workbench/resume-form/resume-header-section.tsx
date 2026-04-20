@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button.tsx"
 import { CardHeader } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
-import { getHostname } from "@/lib/resume-form-helpers.ts"
+import { getHostname } from "@/utils/resume-form-helpers.ts"
 
 interface ResumeHeaderSectionProps {
   data: ResumeData

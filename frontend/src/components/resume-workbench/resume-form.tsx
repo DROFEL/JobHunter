@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { useProfileSettings } from "@/components/app/profile-settings-context.tsx"
 import type { ResumeData } from "@/components/resume-workbench/types.ts"
-import { EducationSection } from "./resume-form/education-section.tsx";
 import { ProjectsSection } from "./resume-form/projects-section.tsx";
 import { ResumeHeaderSection } from "./resume-form/resume-header-section.tsx";
 import { ResumeSummarySection } from "./resume-form/resume-summary-section.tsx";
@@ -60,11 +59,6 @@ export function ResumeForm({ data, onChange }: ResumeFormProps) {
           experiences={data.experiences}
           targetPosition={data.targetPosition}
           onChange={(value) => updateField("experiences", value)}
-        />
-
-        <EducationSection
-          education={data.education}
-          onChange={(value) => updateField("education", value)}
         />
 
         <ProjectsSection

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { BriefcaseBusiness, FileText, LayoutDashboard, Settings, Sparkles } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button.tsx"
-import { cn } from "@/lib/utils.ts"
+import { cn } from "@/utils/utils.ts"
 
 const navigation = [
   { label: "Resume Builder", icon: FileText, to: "/resume-builder" },

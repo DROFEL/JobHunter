@@ -4,7 +4,7 @@ import type { ResumeData } from "@/components/resume-workbench/types.ts"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { createBlankEducation } from "@/lib/resume-form-helpers.ts";
+import { createBlankEducation } from "@/utils/resume-form-helpers.ts";
 
 interface EducationSectionProps {
   education: ResumeData["education"]

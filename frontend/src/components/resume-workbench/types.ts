@@ -30,11 +30,7 @@ export interface SkillTypeItem {
 }
 
 export interface ResumeData {
-  name: string
-  email: string
-  phone: string
-  github: string
-  linkedin: string
+  profile: ProfileSettings,
   position: string
   summary: string
   targetPosition: string
@@ -58,4 +54,12 @@ export interface SavedJob {
   summary: string
   url: string
   saved: boolean
+}
+
+export interface ProfileSettings {
+  name: string
+  email: string
+  phone: string
+  github: string
+  linkedin: string
 }

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
-import { createBlankProject } from "@/lib/resume-form-helpers.ts";
+import { createBlankProject } from "@/utils/resume-form-helpers.ts";
 
 interface ProjectsSectionProps {
   projects: ResumeData["projects"]

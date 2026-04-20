@@ -10,7 +10,7 @@ import {
   createBlankSkillType,
   parseSkillDragPayload,
   type SkillDragPayload,
-} from "@/lib/resume-form-helpers.ts"
+} from "@/utils/resume-form-helpers.ts"
 
 interface SkillsSectionProps {
   skillTypes: SkillTypeItem[]
@@ -92,7 +92,9 @@ export function SkillsSection({ skillTypes, skillPool, onChange }: SkillsSection
     skillTypes.flatMap((skillType) => skillType.skills.map((skill) => skill.trim())).filter(Boolean),
   )
 
-  const availableSkillPool = skillPool.filter((skill) => !assignedSkills.has(skill.trim()))
+  const availableSkillPool = skillPool.filter(
+    (skill) => skill.trim().length > 0 && !assignedSkills.has(skill.trim()),
+  )
 
   return (
     <section className="space-y-4 rounded-xl border border-border/60 bg-accent/20 p-5">
@@ -219,11 +221,9 @@ export function SkillsSection({ skillTypes, skillPool, onChange }: SkillsSection
           <CardDescription>Drag unassigned skills into any skill type above.</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-3">
-          {availableSkillPool.filter((skill) => skill.trim().length > 0).length > 0 ? (
+          {availableSkillPool.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {availableSkillPool
-                .filter((skill) => skill.trim().length > 0)
-                .map((skill, index) => (
+              {availableSkillPool.map((skill, index) => (
                   <div
                     key={`${skill}-${index}`}
                     draggable

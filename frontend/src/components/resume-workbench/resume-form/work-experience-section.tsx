@@ -6,7 +6,7 @@ import { WorkExperienceItem } from "@/components/resume-workbench/work-experienc
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { createBlankExperience, createId } from "@/lib/resume-form-helpers.ts"
+import { createBlankExperience, createId } from "@/utils/resume-form-helpers.ts"
 
 interface WorkExperienceSectionProps {
   experiences: ResumeExperienceItem[]
@@ -192,11 +192,6 @@ export function WorkExperienceSection({
                       <div className="pr-10">
                         <WorkExperienceItem
                           point={point.text}
-                          canMoveUp={pointIndex > 0}
-                          canMoveDown={pointIndex < experience.points.length - 1}
-                          isDragging={false}
-                          moveUp={() => {}}
-                          moveDown={() => {}}
                           updatePoint={(value) => updateWorkPoint(experience.id, point.id, value)}
                           removePoint={() => removeWorkPoint(experience.id, point.id)}
                         />

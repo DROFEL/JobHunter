@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { EducationSection } from "./education-section.tsx";
 
 export function ProfileSettingsPage() {
-  const { profile, skillPool, setSkillPool, updateProfile } = useProfileSettings()
+  const { profile, skillPool, education, setSkillPool, updateProfile, setEducation } = useProfileSettings()
 
   function updateSkill(index: number, value: string) {
     const nextSkillPool = [...skillPool]
@@ -106,6 +107,11 @@ export function ProfileSettingsPage() {
           </CardContent>
         </Card>
 
+        <EducationSection
+          education={education}
+          onChange={(value) => setEducation(value)}
+        />
+
         <Card className="border-border/70 bg-card/85 backdrop-blur-sm">
           <CardHeader className="gap-2">
             <CardTitle className="text-xl">Skills Pool</CardTitle>
@@ -116,17 +122,17 @@ export function ProfileSettingsPage() {
 
           <CardContent className="space-y-3">
             {skillPool.map((skill, index) => (
-                <div key={`${skill}-${index}`} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/65 p-2">
-                  <Input
-                    value={skill}
-                    onChange={(event) => updateSkill(index, event.target.value)}
-                    placeholder="Skill name"
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSkill(index)}>
-                    <X className="size-4" />
-                  </Button>
-                </div>
-              ))}
+              <div key={`${skill}-${index}`} className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/65 p-2">
+                <Input
+                  value={skill}
+                  onChange={(event) => updateSkill(index, event.target.value)}
+                  placeholder="Skill name"
+                />
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeSkill(index)}>
+                  <X className="size-4" />
+                </Button>
+              </div>
+            ))}
 
             <Button type="button" variant="outline" onClick={addSkill}>
               <Plus className="size-4" />
