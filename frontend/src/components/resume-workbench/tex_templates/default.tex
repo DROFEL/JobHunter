@@ -1,0 +1,111 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[top=0.55in,bottom=0.55in,left=0.35in,right=0.35in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{array}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% Section formatting
+\titleformat{\section}{\bfseries\uppercase}{}{0em}{}[\vspace{-0.3em}]
+\titlespacing*{\section}{0pt}{0.7em}{0.3em}
+
+% Bullet formatting
+\setlist[itemize]{leftmargin=1.15em, itemsep=0.2em, topsep=0.2em}
+
+% Section divider
+\newcommand{\sectiondivider}{\vspace{0.35em}\hrule\vspace{0.45em}}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \textbf{Georgy Retinskiy}}\\[0.25em]
+    {\large Software Engineer | C\#/.NET Backend | Distributed Systems}\\[0.35em]
+    Toronto, ON \;|\; +1(437)2560408 \;|\; \href{mailto:retinskiy.g@gmail.com}{retinskiy.g@gmail.com} \;|\;
+    \href{https://www.linkedin.com/}{Linkedin} \;|\; \href{https://github.com/}{Github}
+\end{center}
+
+\vspace{0.35em}
+
+Early-career engineer with strong C\#/.NET backend experience, production ownership, and distributed-systems debugging at scale;
+comfortable with Linux/Windows, CI/CD, and observability; interested in applying those skills to real-time financial systems.
+
+\sectiondivider
+\section*{Education}
+\textbf{York University}, BSc of Computer Science \hfill Graduating September 2026
+
+Relevant Coursework: Advanced: Software Engineering, Data Structures; Data Mining; Design and Analysis of Algorithm;
+Operating System Fundamentals; Network Protocols and App; Software Engineering Testing; Applied machine learning
+
+\sectiondivider
+\section*{Skills}
+\textbf{Languages/Frameworks:} C\#, .NET, TypeScript, Node.js, Python, SQL
+
+\textbf{Databases/APIs:} PostgreSQL, MS SQL Server, Oracle Database, REST, SOAP
+
+\textbf{Infrastructure/Testing:} Kafka, Docker, Jenkins, Kibana, Git, GitHub Actions, Linux, Windows, GCP, Ansible
+
+\sectiondivider
+\section*{Work Experience}
+
+\textbf{Backend Developer Intern} \hfill May 2025 -- Dec 2025 (co-op)\\
+\textit{SOTI (Toronto, ON), Enterprise on-prem IoT device management platform, supporting large-scale deployments, SotiConnect}
+\begin{itemize}
+    \item Designed and developed new integration features in a distributed C\#/.NET backend, including backend service components
+    and request-processing pipelines based on external API constraints.
+    \item Troubleshoot cross-service networking and protocol failures in a multi-service backend, improving reliability for on-prem
+    deployments supporting \textasciitilde300{,}000 concurrent device connections.
+    \item Built an AI-assisted API specification generation and validation pipeline in C\# and Python, automating integration checks and
+    reducing developer time spent on onboarding and update validation by 50\%.
+\end{itemize}
+\textit{Stack: C\#, .NET, MS SQL Server, Wireshark, HTTP/MQTT/SOAP, Jenkins, RestAPI, Windows}
+
+\vspace{0.45em}
+
+\textbf{Software Engineer} \hfill Apr 2024 -- Apr 2025 (part-time)\\
+\textit{Nobl Kids (Toronto, ON), Marketplace startup for children’s programs and activities}
+\begin{itemize}
+    \item Developed and shipped a production marketplace platform, delivering the frontend and backend capabilities used by 100+
+    partner businesses and 700+ paying customers.
+    \item Designed and implemented a multi-party payment workflow with Stripe Connect, supporting platform fees, taxes, payouts, and
+    webhook-driven state management.
+    \item Designed and optimized a PostgreSQL database schema, including indexing and migrations, to support scalable data access
+    and location- and text-based search.
+    \item Owned production infrastructure and deployments on GCP, managing environments, Dockerized services, and release
+    workflows to ensure platform reliability.
+    \item Developed ML powered pipeline for scraping business and class data by using Python, various APIs and LLM models.
+\end{itemize}
+\textit{Stack: TypeScript, Node.js, Next.js, React, tRPC, PostgreSQL, Docker, GCP, Stripe Connect, Playwright}
+
+\vspace{0.45em}
+
+\textbf{DBA/DevOps Intern} \hfill Sep 2023 -- May 2024 (co-op)\\
+\textit{Ontario Public Services (Toronto, ON)}
+\begin{itemize}
+    \item Reduced operational response times 8x via Power Automate workflow automation, with no additional infrastructure cost.
+    \item Increased database refresh efficiency by 40\% through Ansible automation and training of DBA team members.
+    \item Improved backup success rates (96.4\% $\rightarrow$ 98.9\%) by introducing log analytics and observability tooling for Oracle OEM logs,
+    enabling data-driven operational decisions.
+\end{itemize}
+\textit{Stack: Oracle Database, Python, Bash, SQL, Linux, Ansible}
+
+\sectiondivider
+\section*{Projects and Extracurricular Activities}
+\begin{itemize}
+    \item Distributed Banking System --- Spring Boot, Kafka, PostgreSQL, Redis (100\% TDD coverage)
+    \item An http server library built from scratch with sockets • Console WebRTC Chat
+    \item Open Source Contribution - Kanel project on GitHub (PR \#556, PR \#649)
+    \item Homelab: Built and operated a multi-server homelab using Docker and Kubernetes, running Nginx, Prometheus, Grafana,
+    Zabbix, ELK, Kibana, Jenkins, and other self-hosted services.
+\end{itemize}
+
+\textbf{Languages:} Fluent in English; Beginner French; Fluent in Russian
+
+\end{document}
