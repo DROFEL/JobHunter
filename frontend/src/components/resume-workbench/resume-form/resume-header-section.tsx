@@ -1,7 +1,6 @@
 import { Building2, Link as LinkIcon, Sparkles } from "lucide-react"
 
 import type { ResumeData } from "@/components/resume-workbench/types.ts"
-import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { CardHeader } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
@@ -58,11 +57,6 @@ export function ResumeHeaderSection({
                 placeholder="Target Company"
               />
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge>{data.targetCompany || "Target role"}</Badge>
-            <Badge variant="secondary">AI assisted tailoring</Badge>
           </div>
         </div>
       </div>

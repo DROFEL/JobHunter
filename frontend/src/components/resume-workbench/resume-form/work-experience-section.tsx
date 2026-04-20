@@ -1,12 +1,12 @@
-import { Plus, Sparkles, Trash2 } from "lucide-react"
+import { Plus, Sparkles, Trash2, GripVertical } from "lucide-react"
+import { Reorder } from "motion/react"
 
 import type { ExperienceItem as ResumeExperienceItem } from "@/components/resume-workbench/types.ts"
 import { WorkExperienceItem } from "@/components/resume-workbench/work-experience-item.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { ReorderList } from "@/components/ui/reorder-list.tsx"
-import { createBlankExperience, createId } from "@/lib/resume-form-helpers.ts";
+import { createBlankExperience, createId } from "@/lib/resume-form-helpers.ts"
 
 interface WorkExperienceSectionProps {
   experiences: ResumeExperienceItem[]
@@ -19,105 +19,106 @@ export function WorkExperienceSection({
   targetPosition,
   onChange,
 }: WorkExperienceSectionProps) {
-  function updateExperience(experienceIndex: number, updates: Partial<ResumeExperienceItem>) {
-    const nextExperiences = [...experiences]
-    nextExperiences[experienceIndex] = {
-      ...nextExperiences[experienceIndex],
-      ...updates,
-    }
-    onChange(nextExperiences)
+  function updateExperienceById(experienceId: string, updates: Partial<ResumeExperienceItem>) {
+    onChange(
+      experiences.map((experience) =>
+        experience.id === experienceId ? { ...experience, ...updates } : experience,
+      ),
+    )
   }
 
-  function moveWorkPoint(experienceIndex: number, dragIndex: number, hoverIndex: number) {
-    const experience = experiences[experienceIndex]
-
-    if (
-      !experience
-      || dragIndex === hoverIndex
-      || dragIndex < 0
-      || hoverIndex < 0
-      || dragIndex >= experience.points.length
-      || hoverIndex >= experience.points.length
-    ) {
-      return
-    }
-
-    const nextExperiences = [...experiences]
-    const nextPoints = [...experience.points]
-    const [removed] = nextPoints.splice(dragIndex, 1)
-    nextPoints.splice(hoverIndex, 0, removed)
-
-    nextExperiences[experienceIndex] = {
-      ...experience,
-      points: nextPoints,
-    }
-
-    onChange(nextExperiences)
+  function reorderPoints(experienceId: string, nextPoints: ResumeExperienceItem["points"]) {
+    onChange(
+      experiences.map((experience) =>
+        experience.id === experienceId ? { ...experience, points: nextPoints } : experience,
+      ),
+    )
   }
 
-  function updateWorkPoint(experienceIndex: number, pointIndex: number, value: string) {
-    const experience = experiences[experienceIndex]
-    if (!experience) return
-
-    const nextPoints = [...experience.points]
-    nextPoints[pointIndex] = { ...nextPoints[pointIndex], text: value }
-    updateExperience(experienceIndex, { points: nextPoints })
+  function updateWorkPoint(experienceId: string, pointId: string, value: string) {
+    onChange(
+      experiences.map((experience) =>
+        experience.id === experienceId
+          ? {
+              ...experience,
+              points: experience.points.map((point) =>
+                point.id === pointId ? { ...point, text: value } : point,
+              ),
+            }
+          : experience,
+      ),
+    )
   }
 
-  function removeWorkPoint(experienceIndex: number, pointIndex: number) {
-    const experience = experiences[experienceIndex]
-    if (!experience) return
+  function removeWorkPoint(experienceId: string, pointId: string) {
+    onChange(
+      experiences.map((experience) => {
+        if (experience.id !== experienceId) return experience
 
-    const filteredPoints = experience.points.filter((_, currentIndex) => currentIndex !== pointIndex)
-    const nextPoints = filteredPoints.length > 0
-      ? filteredPoints
-      : [{ id: createId("point"), text: "" }]
+        const filteredPoints = experience.points.filter((point) => point.id !== pointId)
+        const nextPoints =
+          filteredPoints.length > 0
+            ? filteredPoints
+            : [{ id: createId("point"), text: "" }]
 
-    updateExperience(experienceIndex, { points: nextPoints })
+        return {
+          ...experience,
+          points: nextPoints,
+        }
+      }),
+    )
   }
 
-  function addWorkPoint(experienceIndex: number) {
-    const experience = experiences[experienceIndex]
-    if (!experience) return
-
-    updateExperience(experienceIndex, {
-      points: [...experience.points, { id: createId("point"), text: "" }],
-    })
+  function addWorkPoint(experienceId: string) {
+    onChange(
+      experiences.map((experience) =>
+        experience.id === experienceId
+          ? {
+              ...experience,
+              points: [...experience.points, { id: createId("point"), text: "" }],
+            }
+          : experience,
+      ),
+    )
   }
 
   function addExperience() {
     onChange([...experiences, createBlankExperience()])
   }
 
-  function removeExperience(experienceIndex: number) {
+  function removeExperienceById(experienceId: string) {
     if (experiences.length === 1) {
       onChange([createBlankExperience()])
       return
     }
 
-    onChange(experiences.filter((_, currentIndex) => currentIndex !== experienceIndex))
+    onChange(experiences.filter((experience) => experience.id !== experienceId))
   }
 
   function suggestAchievement() {
-    const suggestion = `Delivered ${targetPosition.toLowerCase() || "product"} improvements that simplified user flows and improved handoff quality across design and engineering.`
+    const suggestion = `Delivered ${
+      targetPosition.toLowerCase() || "product"
+    } improvements that simplified user flows and improved handoff quality across design and engineering.`
 
     if (experiences.length === 0) {
-      onChange([{
-        ...createBlankExperience(),
-        points: [{ id: createId("point"), text: suggestion }],
-      }])
+      onChange([
+        {
+          ...createBlankExperience(),
+          points: [{ id: createId("point"), text: suggestion }],
+        },
+      ])
       return
     }
 
     const firstExperience = experiences[0]
-    const emptyPointIndex = firstExperience.points.findIndex((point) => point.text.trim().length === 0)
+    const emptyPoint = firstExperience.points.find((point) => point.text.trim().length === 0)
 
-    if (emptyPointIndex >= 0) {
-      updateWorkPoint(0, emptyPointIndex, suggestion)
+    if (emptyPoint) {
+      updateWorkPoint(firstExperience.id, emptyPoint.id, suggestion)
       return
     }
 
-    updateExperience(0, {
+    updateExperienceById(firstExperience.id, {
       points: [...firstExperience.points, { id: createId("point"), text: suggestion }],
     })
   }
@@ -137,61 +138,96 @@ export function WorkExperienceSection({
         </Button>
       </div>
 
-      <ReorderList withDragHandle>
-        {experiences.map((experience, experienceIndex) => (
-          <Card key={experience.id} className="rounded-xl border-border/60 bg-background shadow-none">
-            <CardContent className="space-y-4 p-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Company Name</label>
-                  <Input
-                    value={experience.company}
-                    onChange={(event) =>
-                      updateExperience(experienceIndex, { company: event.target.value })}
-                    placeholder="Tech Corp Inc."
-                  />
+      <Reorder.Group
+        axis="y"
+        values={experiences}
+        onReorder={onChange}
+        className="flex flex-col gap-1"
+      >
+        {experiences.map((experience) => (
+          <Reorder.Item
+            key={experience.id}
+            value={experience}
+            className="list-none"
+            style={{ position: "relative" }}
+          >
+            <Card className="rounded-xl border-border/60 bg-background shadow-none">
+              <CardContent className="space-y-4 p-4 pr-14">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Company Name</label>
+                    <Input
+                      value={experience.company}
+                      onChange={(event) =>
+                        updateExperienceById(experience.id, { company: event.target.value })
+                      }
+                      placeholder="Tech Corp Inc."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Duration</label>
+                    <Input
+                      value={experience.duration}
+                      onChange={(event) =>
+                        updateExperienceById(experience.id, { duration: event.target.value })
+                      }
+                      placeholder="Jan 2020 - Present"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Duration</label>
-                  <Input
-                    value={experience.duration}
-                    onChange={(event) =>
-                      updateExperience(experienceIndex, { duration: event.target.value })}
-                    placeholder="Jan 2020 - Present"
-                  />
+
+                <Reorder.Group
+                  axis="y"
+                  values={experience.points}
+                  onReorder={(nextPoints) => reorderPoints(experience.id, nextPoints)}
+                  className="flex flex-col gap-1"
+                >
+                  {experience.points.map((point, pointIndex) => (
+                    <Reorder.Item
+                      key={point.id}
+                      value={point}
+                      className="list-none"
+                      style={{ position: "relative" }}
+                    >
+                      <div className="pr-10">
+                        <WorkExperienceItem
+                          point={point.text}
+                          canMoveUp={pointIndex > 0}
+                          canMoveDown={pointIndex < experience.points.length - 1}
+                          isDragging={false}
+                          moveUp={() => {}}
+                          moveDown={() => {}}
+                          updatePoint={(value) => updateWorkPoint(experience.id, point.id, value)}
+                          removePoint={() => removeWorkPoint(experience.id, point.id)}
+                        />
+                      </div>
+
+                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <GripVertical className="size-4" />
+                      </div>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" onClick={() => addWorkPoint(experience.id)}>
+                    <Plus className="size-4" />
+                    <span>Add Achievement</span>
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => removeExperienceById(experience.id)}>
+                    <Trash2 className="size-4" />
+                    <span>Remove Experience</span>
+                  </Button>
                 </div>
-              </div>
+              </CardContent>
 
-              <ReorderList>
-                {experience.points.map((point, pointIndex) => (
-                  <WorkExperienceItem
-                    key={point.id}
-                    point={point.text}
-                    canMoveUp={pointIndex > 0}
-                    canMoveDown={pointIndex < experience.points.length - 1}
-                    isDragging={false}
-                    moveUp={() => moveWorkPoint(experienceIndex, pointIndex, pointIndex - 1)}
-                    moveDown={() => moveWorkPoint(experienceIndex, pointIndex, pointIndex + 1)}
-                    updatePoint={(value) => updateWorkPoint(experienceIndex, pointIndex, value)}
-                    removePoint={() => removeWorkPoint(experienceIndex, pointIndex)}
-                  />
-                ))}
-              </ReorderList>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => addWorkPoint(experienceIndex)}>
-                  <Plus className="size-4" />
-                  <span>Add Achievement</span>
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => removeExperience(experienceIndex)}>
-                  <Trash2 className="size-4" />
-                  <span>Remove Experience</span>
-                </Button>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <GripVertical className="size-5" />
               </div>
-            </CardContent>
-          </Card>
+            </Card>
+          </Reorder.Item>
         ))}
-      </ReorderList>
+      </Reorder.Group>
 
       <Button type="button" variant="outline" onClick={addExperience}>
         <Plus className="size-4" />

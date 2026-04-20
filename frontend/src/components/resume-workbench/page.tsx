@@ -152,51 +152,55 @@ export function ResumeWorkbenchPage() {
     linkedin: profile.linkedin,
   }), [profile, resumeData])
 
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= DESKTOP_BREAKPOINT
+
   return (
     <main className="h-full min-h-0 overflow-hidden">
-      <div className="h-full overflow-y-auto px-3 py-3 xl:hidden">
-        <div className="space-y-3">
-          <Sidebar
-            jobs={jobs}
-            selectedJobId={selectedJobId}
-            onSelectJob={handleSelectJob}
-            onReorderJobs={handleReorderJobs}
+      {!isDesktop ? (
+        <div className="h-full overflow-y-auto px-3 py-3">
+          <div className="space-y-3">
+            <Sidebar
+              jobs={jobs}
+              selectedJobId={selectedJobId}
+              onSelectJob={handleSelectJob}
+              onReorderJobs={handleReorderJobs}
+            />
+            <ResumeForm data={resumeData} onChange={setResumeData} />
+            <ResumePreview data={previewData} />
+          </div>
+        </div>
+      ) : (
+        <div ref={containerRef} style={desktopGridStyle} className="h-full w-full grid">
+          <div className="workspace-panel min-h-0 overflow-y-auto p-3">
+            <Sidebar
+              jobs={jobs}
+              selectedJobId={selectedJobId}
+              onSelectJob={handleSelectJob}
+              onReorderJobs={handleReorderJobs}
+            />
+          </div>
+
+          <ResizeHandle
+            ariaLabel="Resize saved jobs and resume form panels"
+            onPointerDown={(event) => startResize("left", event)}
+            onDoubleClick={() => setPanelWidths([...DEFAULT_PANEL_WIDTHS])}
           />
-          <ResumeForm data={resumeData} onChange={setResumeData} />
-          <ResumePreview data={previewData} />
-        </div>
-      </div>
 
-      <div ref={containerRef} style={desktopGridStyle} className="hidden h-full w-full xl:grid">
-        <div className="workspace-panel min-h-0 overflow-y-auto p-3">
-          <Sidebar
-            jobs={jobs}
-            selectedJobId={selectedJobId}
-            onSelectJob={handleSelectJob}
-            onReorderJobs={handleReorderJobs}
+          <div className="workspace-panel min-h-0 overflow-y-auto p-3">
+            <ResumeForm data={resumeData} onChange={setResumeData} />
+          </div>
+
+          <ResizeHandle
+            ariaLabel="Resize resume form and preview panels"
+            onPointerDown={(event) => startResize("right", event)}
+            onDoubleClick={() => setPanelWidths([...DEFAULT_PANEL_WIDTHS])}
           />
+
+          <div className="workspace-panel min-h-0 overflow-y-auto p-3">
+            <ResumePreview data={previewData} />
+          </div>
         </div>
-
-        <ResizeHandle
-          ariaLabel="Resize saved jobs and resume form panels"
-          onPointerDown={(event) => startResize("left", event)}
-          onDoubleClick={() => setPanelWidths([...DEFAULT_PANEL_WIDTHS])}
-        />
-
-        <div className="workspace-panel min-h-0 overflow-y-auto p-3">
-          <ResumeForm data={resumeData} onChange={setResumeData} />
-        </div>
-
-        <ResizeHandle
-          ariaLabel="Resize resume form and preview panels"
-          onPointerDown={(event) => startResize("right", event)}
-          onDoubleClick={() => setPanelWidths([...DEFAULT_PANEL_WIDTHS])}
-        />
-
-        <div className="workspace-panel min-h-0 overflow-y-auto p-3">
-          <ResumePreview data={previewData} />
-        </div>
-      </div>
+      )}
     </main>
   )
 }
