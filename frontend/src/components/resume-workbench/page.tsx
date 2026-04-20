@@ -1,40 +1,42 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-import { initialResumeData, savedJobs } from "@/components/resume-workbench/mock-data.ts"
-import { useProfileSettings } from "@/components/app/profile-settings-context.tsx"
+import {
+  defaultProfileSettings,
+  useProfileSettingsQuery,
+} from "@/api/hooks/useProfileSettings.ts"
 import { ResumeForm } from "@/components/resume-workbench/resume-form.tsx"
 import { ResumePreview } from "@/components/resume-workbench/resume-preview.tsx"
 import { Sidebar } from "@/components/resume-workbench/sidebar.tsx"
-import type { ResumeData, SavedJob } from "@/components/resume-workbench/types.ts"
+import type { JobResume, ResumeData, SavedJob } from "@/components/resume-workbench/types.ts"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable.tsx"
+import { useSavedJobs, useUpdateSavedJobResume } from "@/api/hooks/useSavedJobs.ts"
 
 const DEFAULT_PANEL_SIZES = [18, 42, 40] as const
 const MIN_PANEL_SIZES = [16, 28, 24] as const
 const DESKTOP_BREAKPOINT = 1280
 
-function buildResumeFromJob(job: SavedJob, currentData: ResumeData): ResumeData {
-  return {
-    ...currentData,
-    targetPosition: job.title,
-    targetCompany: job.company,
-    jobPostingLink: job.url,
-    aiJobSummary: job.summary,
-    position: currentData.position || job.title,
-  }
-}
-
 export function ResumeWorkbenchPage() {
-  const { profile, education } = useProfileSettings()
-  const jobs = savedJobs
-  const [selectedJobId, setSelectedJobId] = useState(savedJobs[0]?.id ?? "")
-  const [resumeData, setResumeData] = useState(() =>
-    buildResumeFromJob(savedJobs[0], initialResumeData),
-  )
+  const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
+  const { data: jobs = [] } = useSavedJobs()
+  const { mutate: saveResume } = useUpdateSavedJobResume()
+
+  const [selectedJobId, setSelectedJobId] = useState<string>("")
+  const [editingResume, setEditingResume] = useState<JobResume | null>(null)
   const [isDesktop, setIsDesktop] = useState(false)
+
+  // Seed selection once when jobs first arrive
+  const initialized = useRef(false)
+  useEffect(() => {
+    if (jobs.length > 0 && !initialized.current) {
+      initialized.current = true
+      setSelectedJobId(jobs[0].id)
+      setEditingResume(jobs[0].resume)
+    }
+  }, [jobs])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
@@ -47,19 +49,45 @@ export function ResumeWorkbenchPage() {
     return () => mediaQuery.removeEventListener("change", updateLayout)
   }, [])
 
+  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? jobs[0]
+
+  const sidebarJobs = useMemo(
+    () =>
+      jobs.map((job) => {
+        if (job.id !== selectedJobId || !editingResume) {
+          return job
+        }
+
+        return {
+          ...job,
+          title: editingResume.targetPosition || editingResume.position || job.title,
+          company: editingResume.targetCompany || job.company,
+        }
+      }),
+    [editingResume, jobs, selectedJobId],
+  )
+
   function handleSelectJob(job: SavedJob) {
+    // Persist edits for the current job before switching
+    if (editingResume && selectedJobId) {
+      saveResume({ id: selectedJobId, resume: editingResume })
+    }
     setSelectedJobId(job.id)
-    setResumeData((currentData) => buildResumeFromJob(job, currentData))
+    setEditingResume(job.resume)
   }
 
+  function handleResumeChange(resume: JobResume) {
+    setEditingResume(resume)
+  }
+
+  const currentResume = editingResume ?? selectedJob?.resume
+
   const previewData = useMemo<ResumeData>(
-    () => ({
-      ...resumeData,
-      profile: profile,
-      education: education
-    }),
-    [profile, resumeData, education],
+    () => ({ ...(currentResume as JobResume), profile: settings, education: settings.education }),
+    [currentResume, settings],
   )
+
+  if (!selectedJob || !currentResume) return null
 
   return (
     <main className="h-full min-h-0 overflow-hidden">
@@ -67,11 +95,11 @@ export function ResumeWorkbenchPage() {
         <div className="h-full overflow-y-auto px-3 py-3">
           <div className="space-y-3">
             <Sidebar
-              jobs={jobs}
+              jobs={sidebarJobs}
               selectedJobId={selectedJobId}
               onSelectJob={handleSelectJob}
             />
-            <ResumeForm data={resumeData} onChange={setResumeData} />
+            <ResumeForm data={currentResume} onChange={handleResumeChange} />
             <ResumePreview data={previewData} />
           </div>
         </div>
@@ -87,7 +115,7 @@ export function ResumeWorkbenchPage() {
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
               <Sidebar
-                jobs={jobs}
+                jobs={sidebarJobs}
                 selectedJobId={selectedJobId}
                 onSelectJob={handleSelectJob}
               />
@@ -102,7 +130,7 @@ export function ResumeWorkbenchPage() {
             className="min-w-0"
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
-              <ResumeForm data={resumeData} onChange={setResumeData} />
+              <ResumeForm data={currentResume} onChange={handleResumeChange} />
             </div>
           </ResizablePanel>
 

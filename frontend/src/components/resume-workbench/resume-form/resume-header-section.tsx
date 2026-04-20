@@ -1,6 +1,6 @@
 import { Building2, Link as LinkIcon, Sparkles } from "lucide-react"
 
-import type { ResumeData } from "@/components/resume-workbench/types.ts"
+import type { JobResume } from "@/components/resume-workbench/types.ts"
 import { Button } from "@/components/ui/button.tsx"
 import { CardHeader } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea.tsx"
 import { getHostname } from "@/utils/resume-form-helpers.ts"
 
 interface ResumeHeaderSectionProps {
-  data: ResumeData
-  updateField: <K extends keyof ResumeData>(field: K, value: ResumeData[K]) => void
+  data: JobResume
+  updateField: <K extends keyof JobResume>(field: K, value: JobResume[K]) => void
   onGenerateSummary: () => void
 }
 

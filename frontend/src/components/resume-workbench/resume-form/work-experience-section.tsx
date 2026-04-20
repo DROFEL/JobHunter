@@ -182,7 +182,7 @@ export function WorkExperienceSection({
                   onReorder={(nextPoints) => reorderPoints(experience.id, nextPoints)}
                   className="flex flex-col gap-1"
                 >
-                  {experience.points.map((point, pointIndex) => (
+                  {experience.points.map((point) => (
                     <Reorder.Item
                       key={point.id}
                       value={point}

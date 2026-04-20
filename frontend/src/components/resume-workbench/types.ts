@@ -29,8 +29,16 @@ export interface SkillTypeItem {
   skills: string[]
 }
 
-export interface ResumeData {
-  profile: ProfileSettings,
+export interface ProfileSettings {
+  name: string
+  email: string
+  phone: string
+  github: string
+  linkedin: string
+}
+
+// Per-job editable resume content — stored inside each SavedJob
+export interface JobResume {
   position: string
   summary: string
   targetPosition: string
@@ -38,10 +46,18 @@ export interface ResumeData {
   jobPostingLink: string
   aiJobSummary: string
   experiences: ExperienceItem[]
-  education: EducationItem[]
   projects: ProjectItem[]
   skillTypes: SkillTypeItem[]
 }
+
+// Full assembled data passed to the PDF template
+export interface ResumeData extends JobResume {
+  profile: ProfileSettings
+  education: EducationItem[]
+}
+
+export const JOB_STATUSES = ["Found", "Applied", "Interview", "Offer", "Rejected"] as const
+export type JobStatus = typeof JOB_STATUSES[number]
 
 export interface SavedJob {
   id: string
@@ -54,12 +70,6 @@ export interface SavedJob {
   summary: string
   url: string
   saved: boolean
-}
-
-export interface ProfileSettings {
-  name: string
-  email: string
-  phone: string
-  github: string
-  linkedin: string
+  status: JobStatus
+  resume: JobResume
 }

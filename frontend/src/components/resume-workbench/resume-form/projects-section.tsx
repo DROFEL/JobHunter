@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react"
 
-import type { ResumeData } from "@/components/resume-workbench/types.ts"
+import type { ProjectItem } from "@/components/resume-workbench/types.ts"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea.tsx"
 import { createBlankProject } from "@/utils/resume-form-helpers.ts";
 
 interface ProjectsSectionProps {
-  projects: ResumeData["projects"]
+  projects: ProjectItem[]
   projectDescriptionLimit: number
-  onChange: (projects: ResumeData["projects"]) => void
+  onChange: (projects: ProjectItem[]) => void
 }
 
 export function ProjectsSection({

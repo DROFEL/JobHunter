@@ -1,5 +1,9 @@
 import { Link as LinkIcon, Mail, Phone, Plus, UserRound, X } from "lucide-react"
-import { useProfileSettings } from "@/components/app/profile-settings-context.tsx"
+import {
+  defaultProfileSettings,
+  useProfileSettingsQuery,
+  useUpdateProfileSettings,
+} from "@/api/hooks/useProfileSettings.ts"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx"
@@ -7,20 +11,29 @@ import { Input } from "@/components/ui/input.tsx"
 import { EducationSection } from "./education-section.tsx";
 
 export function ProfileSettingsPage() {
-  const { profile, skillPool, education, setSkillPool, updateProfile, setEducation } = useProfileSettings()
+  const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
+  const { mutate: updateProfileSettings } = useUpdateProfileSettings()
+  const profile = settings
+  const { skillPool, education } = settings
+
+  function patchSettings(updates: Partial<typeof settings>) {
+    updateProfileSettings(updates)
+  }
 
   function updateSkill(index: number, value: string) {
     const nextSkillPool = [...skillPool]
     nextSkillPool[index] = value
-    setSkillPool(nextSkillPool)
+    patchSettings({ skillPool: nextSkillPool })
   }
 
   function addSkill() {
-    setSkillPool([...skillPool, ""])
+    patchSettings({ skillPool: [...skillPool, ""] })
   }
 
   function removeSkill(index: number) {
-    setSkillPool(skillPool.filter((_, currentIndex) => currentIndex !== index))
+    patchSettings({
+      skillPool: skillPool.filter((_, currentIndex) => currentIndex !== index),
+    })
   }
 
   return (
@@ -49,7 +62,7 @@ export function ProfileSettingsPage() {
                 </span>
                 <Input
                   value={profile.name}
-                  onChange={(event) => updateProfile({ name: event.target.value })}
+                  onChange={(event) => patchSettings({ name: event.target.value })}
                   placeholder="John Doe"
                 />
               </label>
@@ -62,7 +75,7 @@ export function ProfileSettingsPage() {
                 <Input
                   type="email"
                   value={profile.email}
-                  onChange={(event) => updateProfile({ email: event.target.value })}
+                  onChange={(event) => patchSettings({ email: event.target.value })}
                   placeholder="john@example.com"
                 />
               </label>
@@ -75,7 +88,7 @@ export function ProfileSettingsPage() {
                 <Input
                   type="tel"
                   value={profile.phone}
-                  onChange={(event) => updateProfile({ phone: event.target.value })}
+                  onChange={(event) => patchSettings({ phone: event.target.value })}
                   placeholder="+1 (555) 123-4567"
                 />
               </label>
@@ -87,7 +100,7 @@ export function ProfileSettingsPage() {
                 </span>
                 <Input
                   value={profile.github}
-                  onChange={(event) => updateProfile({ github: event.target.value })}
+                  onChange={(event) => patchSettings({ github: event.target.value })}
                   placeholder="https://github.com/username"
                 />
               </label>
@@ -99,7 +112,7 @@ export function ProfileSettingsPage() {
                 </span>
                 <Input
                   value={profile.linkedin}
-                  onChange={(event) => updateProfile({ linkedin: event.target.value })}
+                  onChange={(event) => patchSettings({ linkedin: event.target.value })}
                   placeholder="https://www.linkedin.com/in/username"
                 />
               </label>
@@ -109,7 +122,7 @@ export function ProfileSettingsPage() {
 
         <EducationSection
           education={education}
-          onChange={(value) => setEducation(value)}
+          onChange={(value) => patchSettings({ education: value })}
         />
 
         <Card className="border-border/70 bg-card/85 backdrop-blur-sm">

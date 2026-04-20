@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card.tsx"
-import { useProfileSettings } from "@/components/app/profile-settings-context.tsx"
-import type { ResumeData } from "@/components/resume-workbench/types.ts"
+import {
+  defaultProfileSettings,
+  useProfileSettingsQuery,
+} from "@/api/hooks/useProfileSettings.ts"
+import type { JobResume } from "@/components/resume-workbench/types.ts"
 import { ProjectsSection } from "./resume-form/projects-section.tsx";
 import { ResumeHeaderSection } from "./resume-form/resume-header-section.tsx";
 import { ResumeSummarySection } from "./resume-form/resume-summary-section.tsx";
@@ -8,17 +11,18 @@ import { SkillsSection } from "./resume-form/skills-section.tsx";
 import { WorkExperienceSection } from "./resume-form/work-experience-section.tsx";
 
 interface ResumeFormProps {
-  data: ResumeData
-  onChange: (data: ResumeData) => void
+  data: JobResume
+  onChange: (data: JobResume) => void
 }
 
 const SUMMARY_LIMIT = 500
 const PROJECT_DESC_LIMIT = 200
 
 export function ResumeForm({ data, onChange }: ResumeFormProps) {
-  const { skillPool } = useProfileSettings()
+  const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
+  const { skillPool } = settings
 
-  function updateField<K extends keyof ResumeData>(field: K, value: ResumeData[K]) {
+  function updateField<K extends keyof JobResume>(field: K, value: JobResume[K]) {
     onChange({ ...data, [field]: value })
   }
 

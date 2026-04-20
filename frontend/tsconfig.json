@@ -7,12 +7,5 @@
     {
       "path": "./tsconfig.node.json"
     }
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "sourceMap": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+  ]
 }

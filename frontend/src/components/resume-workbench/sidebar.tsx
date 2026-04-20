@@ -1,6 +1,6 @@
 import { Bookmark, BriefcaseBusiness, Clock3, MapPin, Plus } from "lucide-react"
 
-import type { SavedJob } from "@/components/resume-workbench/types.ts"
+import type { JobStatus, SavedJob } from "@/components/resume-workbench/types.ts"
 import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx"
@@ -10,6 +10,14 @@ interface SidebarProps {
   jobs: SavedJob[]
   selectedJobId: string
   onSelectJob: (job: SavedJob) => void
+}
+
+const STATUS_STYLES: Record<JobStatus, string> = {
+  Found:     "bg-secondary text-secondary-foreground",
+  Applied:   "bg-blue-500/15 text-blue-500",
+  Interview: "bg-amber-500/15 text-amber-500",
+  Offer:     "bg-green-500/15 text-green-600",
+  Rejected:  "bg-destructive/15 text-destructive",
 }
 
 function getInitials(company: string) {
@@ -70,6 +78,9 @@ export function Sidebar({ jobs, selectedJobId, onSelectJob }: SidebarProps) {
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge variant="secondary">{job.salary}</Badge>
                     <Badge variant="outline">{job.employmentType}</Badge>
+                    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[job.status])}>
+                      {job.status}
+                    </span>
                   </div>
                 </div>
               </div>
