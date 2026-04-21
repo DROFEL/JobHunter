@@ -1,4 +1,4 @@
-# JobHunter
+# JobHunter (WIP)
 
 A full-stack job search automation platform — scrape job postings, tailor resumes with AI assistance, track applications, and (soon) auto-apply. Built as a personal tool and a demonstration of event-driven, service-oriented backend architecture.
 
