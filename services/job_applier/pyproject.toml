@@ -1,0 +1,25 @@
+[project]
+name = "job-applier"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "George", email = "cradplay@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+  "browser-use"
+  "db",
+  "common",
+]
+
+[project.scripts]
+job-applier = "job_applier:main"
+
+[tool.uv.sources]
+db = { workspace = true }
+common = { workspace = true }
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"

@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api"
+const API_BASE = (import.meta.env.VITE_WEB_API_URL as string | undefined) ?? "/api"
 
 export class ApiError extends Error {
   constructor(
@@ -18,10 +18,16 @@ async function apiFetch<T>(
   schema: z.ZodSchema<T>,
   body?: unknown,
 ): Promise<T> {
-  const init: RequestInit = { method }
+  const init: RequestInit = { 
+    method,
+    headers: {"Authentication": "1"}
+  }
 
   if (body !== undefined) {
-    init.headers = { "Content-Type": "application/json" }
+    init.headers = {
+      ...(init.headers as Record<string, string>),
+      "Content-Type": "application/json",
+    }
     init.body = JSON.stringify(body)
   }
 

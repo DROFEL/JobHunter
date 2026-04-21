@@ -12,6 +12,6 @@
   },
   "allowScripts": {
     "allow": [],
-    "deny": ["npm:core-js@3.49.0", "npm:esbuild@0.27.7"]
+    "deny": ["npm:core-js@3.49.0", "npm:esbuild@0.27.7", "npm:msw@2.13.4"]
   }
 }

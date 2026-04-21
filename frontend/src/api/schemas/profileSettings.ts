@@ -1,21 +1,37 @@
 import { z } from "zod"
 
-const educationItemSchema = z.object({
+export const educationItemSchema = z.object({
   id: z.string(),
   school: z.string(),
   degree: z.string(),
   year: z.string(),
 })
 
-// Mirrors profile settings data used across the app.
-export const profileSettingsSchema = z.object({
+export const profileSchema = z.object({
   name: z.string(),
   email: z.string(),
   phone: z.string(),
   github: z.string(),
   linkedin: z.string(),
-  skillPool: z.array(z.string()),
-  education: z.array(educationItemSchema),
 })
 
-export type ProfileSettingsDTO = z.infer<typeof profileSettingsSchema>
+export const userDataSchema = z.object({
+  profile: profileSchema,
+  education: z.array(educationItemSchema),
+  skillPool: z.array(z.string()),
+})
+
+export const userUpsertRequestSchema = z.object({
+  data: userDataSchema,
+})
+
+export const userResponseSchema = z.object({
+  user_id: z.string(),
+  data: userDataSchema.nullable(),
+})
+
+export type EducationItemDTO = z.infer<typeof educationItemSchema>
+export type ProfileDTO = z.infer<typeof profileSchema>
+export type ProfileSettingsDTO = z.infer<typeof userDataSchema>
+export type UserUpsertRequestDTO = z.infer<typeof userUpsertRequestSchema>
+export type UserResponseDTO = z.infer<typeof userResponseSchema>

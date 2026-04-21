@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import {
   defaultProfileSettings,
@@ -7,25 +7,41 @@ import {
 import { ResumeForm } from "@/components/resume-workbench/resume-form.tsx"
 import { ResumePreview } from "@/components/resume-workbench/resume-preview.tsx"
 import { Sidebar } from "@/components/resume-workbench/sidebar.tsx"
-import type { JobResume, ResumeData, SavedJob } from "@/components/resume-workbench/types.ts"
+import type { JobResume, JobStatus, ResumeData, SavedJob } from "@/components/resume-workbench/types.ts"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable.tsx"
-import { useSavedJobs, useUpdateSavedJobResume } from "@/api/hooks/useSavedJobs.ts"
+import { useResumeTemplates } from "@/api/hooks/useResumeTemplates.ts"
+import { useSavedJobs, useCreateSavedJob, useUpdateSavedJob, useUpdateSavedJobResume } from "@/api/hooks/useSavedJobs.ts"
 
 const DEFAULT_PANEL_SIZES = [18, 42, 40] as const
 const MIN_PANEL_SIZES = [16, 28, 24] as const
 const DESKTOP_BREAKPOINT = 1280
+const EMPTY_RESUME: JobResume = {
+  position: "",
+  summary: "",
+  targetPosition: "",
+  targetCompany: "",
+  jobPostingLink: "",
+  aiJobSummary: "",
+  experiences: [],
+  projects: [],
+  skillTypes: [],
+}
 
 export function ResumeWorkbenchPage() {
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
   const { data: jobs = [] } = useSavedJobs()
+  const { data: templates = [] } = useResumeTemplates()
   const { mutate: saveResume } = useUpdateSavedJobResume()
+  const { mutate: createJob } = useCreateSavedJob()
+  const { mutate: updateJob } = useUpdateSavedJob()
 
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [editingResume, setEditingResume] = useState<JobResume | null>(null)
+  const [editingMeta, setEditingMeta] = useState<{ status?: JobStatus; employmentType?: string; salary?: string }>({})
   const [isDesktop, setIsDesktop] = useState(false)
 
   // Seed selection once when jobs first arrive
@@ -50,6 +66,7 @@ export function ResumeWorkbenchPage() {
   }, [])
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? jobs[0]
+  const hasJobs = jobs.length > 0
 
   const sidebarJobs = useMemo(
     () =>
@@ -62,32 +79,96 @@ export function ResumeWorkbenchPage() {
           ...job,
           title: editingResume.targetPosition || editingResume.position || job.title,
           company: editingResume.targetCompany || job.company,
+          ...editingMeta,
         }
       }),
-    [editingResume, jobs, selectedJobId],
+    [editingMeta, editingResume, jobs, selectedJobId],
   )
 
   function handleSelectJob(job: SavedJob) {
-    // Persist edits for the current job before switching
     if (editingResume && selectedJobId) {
       saveResume({ id: selectedJobId, resume: editingResume })
     }
     setSelectedJobId(job.id)
     setEditingResume(job.resume)
+    setEditingMeta({})
   }
 
   function handleResumeChange(resume: JobResume) {
     setEditingResume(resume)
   }
 
-  const currentResume = editingResume ?? selectedJob?.resume
+  function handleJobMetaChange(fields: { status?: JobStatus; employmentType?: string; salary?: string }) {
+    setEditingMeta((prev) => ({ ...prev, ...fields }))
+    if (selectedJobId) {
+      updateJob({ id: selectedJobId, ...fields })
+    }
+  }
+
+  function handleCreateFromTemplate(templateId: string | null) {
+    const template = templateId ? templates.find((t) => t.id === templateId) : null
+    const resume: JobResume = template
+      ? { ...(template.data as JobResume), targetPosition: "", targetCompany: "", jobPostingLink: "", aiJobSummary: "" }
+      : EMPTY_RESUME
+
+    createJob(
+      {
+        title: template?.data.position || "New Job",
+        company: "",
+        location: "",
+        posted: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        salary: "",
+        employmentType: "",
+        summary: "",
+        url: "",
+        saved: true,
+        status: "Found",
+        resume,
+      },
+      {
+        onSuccess: (newJob) => {
+          setSelectedJobId(newJob.id)
+          setEditingResume(newJob.resume)
+        },
+      },
+    )
+  }
+
+  const currentResume = editingResume ?? selectedJob?.resume ?? EMPTY_RESUME
+
+  const jobMeta = selectedJob
+    ? {
+        status: (editingMeta.status ?? selectedJob.status) as JobStatus,
+        employmentType: editingMeta.employmentType ?? selectedJob.employmentType,
+        salary: editingMeta.salary ?? selectedJob.salary,
+      }
+    : undefined
 
   const previewData = useMemo<ResumeData>(
-    () => ({ ...(currentResume as JobResume), profile: settings, education: settings.education }),
+    () => ({
+      ...currentResume,
+      profile: settings.profile,
+      education: settings.education,
+    }),
     [currentResume, settings],
   )
 
-  if (!selectedJob || !currentResume) return null
+  function renderDisabledPanel(children: ReactNode, message: string) {
+    return (
+      <div className="relative min-h-full">
+        <div className={hasJobs ? "" : "pointer-events-none opacity-45 grayscale"}>
+          {children}
+        </div>
+        {!hasJobs ? (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+            <div className="max-w-xs rounded-xl border border-border/60 bg-background/90 px-4 py-3 text-center text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
+              {message}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <main className="h-full min-h-0 overflow-hidden">
@@ -98,9 +179,16 @@ export function ResumeWorkbenchPage() {
               jobs={sidebarJobs}
               selectedJobId={selectedJobId}
               onSelectJob={handleSelectJob}
+              onCreateFromTemplate={handleCreateFromTemplate}
             />
-            <ResumeForm data={currentResume} onChange={handleResumeChange} />
-            <ResumePreview data={previewData} />
+            {renderDisabledPanel(
+              <ResumeForm data={currentResume} onChange={handleResumeChange} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
+              "Add or save a job posting to start editing a resume.",
+            )}
+            {renderDisabledPanel(
+              <ResumePreview data={previewData} />,
+              "Resume preview becomes available once a job posting is selected.",
+            )}
           </div>
         </div>
       ) : (
@@ -118,6 +206,7 @@ export function ResumeWorkbenchPage() {
                 jobs={sidebarJobs}
                 selectedJobId={selectedJobId}
                 onSelectJob={handleSelectJob}
+                onCreateFromTemplate={handleCreateFromTemplate}
               />
             </div>
           </ResizablePanel>
@@ -130,7 +219,10 @@ export function ResumeWorkbenchPage() {
             className="min-w-0"
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
-              <ResumeForm data={currentResume} onChange={handleResumeChange} />
+              {renderDisabledPanel(
+                <ResumeForm data={currentResume} onChange={handleResumeChange} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
+                "Add or save a job posting to start editing a resume.",
+              )}
             </div>
           </ResizablePanel>
 
@@ -142,7 +234,10 @@ export function ResumeWorkbenchPage() {
             className="min-w-0"
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
-              <ResumePreview data={previewData} />
+              {renderDisabledPanel(
+                <ResumePreview data={previewData} />,
+                "Resume preview becomes available once a job posting is selected.",
+              )}
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

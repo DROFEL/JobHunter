@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ResumeTemplatesRouteImport } from './routes/resume-templates'
 import { Route as ResumeBuilderRouteImport } from './routes/resume-builder'
 import { Route as JobSearchRouteImport } from './routes/job-search'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResumeTemplatesRoute = ResumeTemplatesRouteImport.update({
+  id: '/resume-templates',
+  path: '/resume-templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResumeBuilderRoute = ResumeBuilderRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/job-search': typeof JobSearchRoute
   '/resume-builder': typeof ResumeBuilderRoute
+  '/resume-templates': typeof ResumeTemplatesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/job-search': typeof JobSearchRoute
   '/resume-builder': typeof ResumeBuilderRoute
+  '/resume-templates': typeof ResumeTemplatesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/job-search': typeof JobSearchRoute
   '/resume-builder': typeof ResumeBuilderRoute
+  '/resume-templates': typeof ResumeTemplatesRoute
   '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
@@ -70,15 +79,23 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/job-search'
     | '/resume-builder'
+    | '/resume-templates'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/job-search' | '/resume-builder' | '/settings'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/job-search'
+    | '/resume-builder'
+    | '/resume-templates'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/job-search'
     | '/resume-builder'
+    | '/resume-templates'
     | '/settings'
   fileRoutesById: FileRoutesById
 }
@@ -87,6 +104,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   JobSearchRoute: typeof JobSearchRoute
   ResumeBuilderRoute: typeof ResumeBuilderRoute
+  ResumeTemplatesRoute: typeof ResumeTemplatesRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -97,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resume-templates': {
+      id: '/resume-templates'
+      path: '/resume-templates'
+      fullPath: '/resume-templates'
+      preLoaderRoute: typeof ResumeTemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resume-builder': {
@@ -135,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   JobSearchRoute: JobSearchRoute,
   ResumeBuilderRoute: ResumeBuilderRoute,
+  ResumeTemplatesRoute: ResumeTemplatesRoute,
   SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport

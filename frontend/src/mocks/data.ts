@@ -1,26 +1,18 @@
 import type { ProfileSettingsDTO } from "@/api/schemas/profileSettings.ts"
 import type { SavedJobDTO } from "@/api/schemas/savedJob.ts"
+import type { ResumeTemplateDTO } from "@/api/schemas/resumeTemplate.ts"
 
 // In-memory store — this is the single source of mock data for the entire app.
 // MSW handlers read and mutate these objects; React Query keeps the UI in sync.
-export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO } = {
+export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: ResumeTemplateDTO[] } = {
   profile: {
-    name: "",
-    email: "",
-    phone: "",
-    github: "",
-    linkedin: "",
-    skillPool: [
-      "React",
-      "TypeScript",
-      "JavaScript",
-      "Tailwind CSS",
-      "Node.js",
-      "Design Systems",
-      "Accessibility",
-      "Testing",
-      "Git",
-    ],
+    profile: {
+      name: "",
+      email: "",
+      phone: "",
+      github: "",
+      linkedin: "",
+    },
     education: [
       {
         id: "edu-1",
@@ -28,6 +20,17 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO } = {
         degree: "BSc Computer Science",
         year: "Expected August 2026",
       },
+    ],
+    skillPool: [
+      "React",
+      "TypeScript",
+      "JavaScript",
+      "Tailwind CSS",
+      "Accessibility",
+      "Node.js",
+      "Design Systems",
+      "Testing",
+      "Git",
     ],
   },
 
@@ -180,6 +183,81 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO } = {
         experiences: [],
         projects: [],
         skillTypes: [],
+      },
+    },
+  ],
+
+  templates: [
+    {
+      id: "template-1",
+      name: "Senior Frontend Engineer",
+      data: {
+        position: "Senior Frontend Engineer",
+        summary:
+          "Frontend engineer with 6+ years of experience translating product strategy into refined, accessible interfaces. I partner closely with design, write maintainable TypeScript, and ship features that improve activation and retention.",
+        targetPosition: "",
+        targetCompany: "",
+        jobPostingLink: "",
+        aiJobSummary: "",
+        experiences: [
+          {
+            id: "experience-1",
+            company: "Lumen Digital",
+            duration: "Jan 2021 - Present",
+            points: [
+              { id: "point-1", text: "Led a redesign of the self-serve onboarding flow, increasing completion rate by 18% while reducing support tickets." },
+              { id: "point-2", text: "Built shared React and Tailwind primitives that reduced duplicate UI code across three teams." },
+            ],
+          },
+          {
+            id: "experience-2",
+            company: "Nova Commerce",
+            duration: "May 2019 - Dec 2020",
+            points: [
+              { id: "point-3", text: "Owned storefront performance initiatives that cut median page load time from 3.8s to 2.1s." },
+            ],
+          },
+        ],
+        projects: [
+          {
+            id: "project-1",
+            name: "Hiring Funnel Dashboard",
+            description: "Created a React dashboard for recruiting operations with actionable conversion insights and recruiter-friendly filters.",
+          },
+        ],
+        skillTypes: [
+          { id: "skill-type-1", name: "Frontend", skills: ["React", "TypeScript", "Tailwind CSS", "Accessibility"] },
+          { id: "skill-type-2", name: "Product & Collaboration", skills: ["Design Systems", "Experimentation"] },
+        ],
+      },
+    },
+    {
+      id: "template-2",
+      name: "Full Stack Engineer",
+      data: {
+        position: "Full Stack Engineer",
+        summary:
+          "Full stack engineer comfortable across the entire web stack — from API design to React interfaces. I enjoy building systems that are both robust and delightful to use.",
+        targetPosition: "",
+        targetCompany: "",
+        jobPostingLink: "",
+        aiJobSummary: "",
+        experiences: [
+          {
+            id: "exp-fs-1",
+            company: "Lumen Digital",
+            duration: "Jan 2021 - Present",
+            points: [
+              { id: "pt-fs-1", text: "Designed and shipped a multi-tenant billing API handling 50k+ transactions per month." },
+              { id: "pt-fs-2", text: "Built responsive React dashboards backed by FastAPI services, reducing operational overhead for the support team." },
+            ],
+          },
+        ],
+        projects: [],
+        skillTypes: [
+          { id: "st-fs-1", name: "Frontend", skills: ["React", "TypeScript", "Tailwind CSS"] },
+          { id: "st-fs-2", name: "Backend", skills: ["Node.js", "Python", "PostgreSQL"] },
+        ],
       },
     },
   ],

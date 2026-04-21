@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router"
-import { BriefcaseBusiness, FileText, LayoutDashboard, Settings, Sparkles } from "lucide-react"
+import { BriefcaseBusiness, FileText, LayoutDashboard, Library, Settings, Sparkles } from "lucide-react"
 
 import { buttonVariants } from "@/components/ui/button.tsx"
 import { cn } from "@/utils/utils.ts"
 
 const navigation = [
   { label: "Resume Builder", icon: FileText, to: "/resume-builder" },
+  { label: "Templates", icon: Library, to: "/resume-templates" },
   { label: "Job Search", icon: BriefcaseBusiness, to: "/job-search" },
   { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" },
   { label: "Settings", icon: Settings, to: "/settings" },

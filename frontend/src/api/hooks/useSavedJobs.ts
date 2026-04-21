@@ -67,6 +67,19 @@ export function useUpdateSavedJobResume() {
   })
 }
 
+/** Patch arbitrary top-level fields on a saved job. */
+export function useUpdateSavedJob() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...fields }: { id: string } & Partial<Omit<SavedJobDTO, "id">>) =>
+      api.patch(`${ENDPOINT}/${id}`, savedJobSchema, fields),
+    onSuccess: (updatedJob) => {
+      syncSavedJobsListCache(queryClient, updatedJob)
+      queryClient.setQueryData(savedJobsKeys.detail(updatedJob.id), updatedJob)
+    },
+  })
+}
+
 /** Toggle the saved flag on a job. Updates list and detail caches. */
 export function useToggleSavedJob() {
   const queryClient = useQueryClient()
