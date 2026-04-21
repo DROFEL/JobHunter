@@ -35,6 +35,15 @@ export function createBlankEducation() {
     school: "",
     degree: "",
     year: "",
+    description: "",
+  }
+}
+
+export function createBlankLanguage() {
+  return {
+    id: createId("language"),
+    language: "",
+    level: "Fluent",
   }
 }
 

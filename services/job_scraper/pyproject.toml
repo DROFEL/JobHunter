@@ -9,6 +9,13 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
   "browser-use",
+  "confluent-kafka",
+  "langchain", 
+  "langchain-openrouter",
+  "crawlee",
+  "crawlee[playwright]",
+  "asyncio",
+  "minio",
   "db",
   "common",
 ]

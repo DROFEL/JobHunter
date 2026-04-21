@@ -40,6 +40,7 @@ export const jobResumeSchema = z.object({
   experiences: z.array(experienceItemSchema),
   projects: z.array(projectItemSchema),
   skillTypes: z.array(skillTypeItemSchema),
+  enabledLanguageIds: z.array(z.string()).default([]),
 })
 
 // Mirrors SavedJob

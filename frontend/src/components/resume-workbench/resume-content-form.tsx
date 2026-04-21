@@ -5,6 +5,7 @@ import { ProjectsSection } from "./resume-form/projects-section.tsx"
 import { ResumeSummarySection } from "./resume-form/resume-summary-section.tsx"
 import { SkillsSection } from "./resume-form/skills-section.tsx"
 import { WorkExperienceSection } from "./resume-form/work-experience-section.tsx"
+import { LanguagesToggleSection } from "./resume-form/languages-toggle-section.tsx"
 
 interface ResumeContentFormProps {
   data: JobResume
@@ -65,6 +66,14 @@ export function ResumeContentForm({ data, onChange }: ResumeContentFormProps) {
           skillPool={skillPool}
           onChange={(value) => updateField("skillTypes", value)}
         />
+
+        {settings.languages.length > 0 && (
+          <LanguagesToggleSection
+            languages={settings.languages}
+            enabledIds={data.enabledLanguageIds}
+            onChange={(ids) => updateField("enabledLanguageIds", ids)}
+          />
+        )}
       </CardContent>
     </Card>
   )

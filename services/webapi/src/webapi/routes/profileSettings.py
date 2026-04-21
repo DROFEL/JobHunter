@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/profileSettings", tags=["users"])
+router = APIRouter(prefix="/profileSettings", tags=["profile-settings"])
 
 
 @router.get("")

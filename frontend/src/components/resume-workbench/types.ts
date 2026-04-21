@@ -8,6 +8,13 @@ export interface EducationItem {
   school: string
   degree: string
   year: string
+  description: string
+}
+
+export interface LanguageItem {
+  id: string
+  language: string
+  level: string
 }
 
 export interface ProjectItem {
@@ -48,12 +55,14 @@ export interface JobResume {
   experiences: ExperienceItem[]
   projects: ProjectItem[]
   skillTypes: SkillTypeItem[]
+  enabledLanguageIds: string[]
 }
 
 // Full assembled data passed to the PDF template
 export interface ResumeData extends JobResume {
   profile: ProfileSettings
   education: EducationItem[]
+  languages: LanguageItem[]
 }
 
 export const JOB_STATUSES = ["Found", "Applied", "Interview", "Offer", "Rejected"] as const

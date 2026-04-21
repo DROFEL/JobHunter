@@ -64,6 +64,7 @@ export function ClassicPdf({ data }: { data: ResumeData }) {
   ].filter(Boolean) as React.ReactNode[]
 
   const edu = data.education.filter((i) => i.school.trim() || i.degree.trim() || i.year.trim())
+  const languages = data.languages?.filter((l) => l.language.trim()) ?? []
   const skills = data.skillTypes.filter(
     (s) => s.name.trim() || s.skills.some((x) => x.trim()),
   )
@@ -95,12 +96,17 @@ export function ClassicPdf({ data }: { data: ResumeData }) {
           <View style={styles.sectionWrap}>
             <Text style={styles.sectionTitle}>Education:</Text>
             {edu.map((item) => (
-              <View key={item.id} style={styles.rowBetween}>
-                <Text>
-                  <Text style={styles.bold}>{item.school || "Institution"}</Text>
-                  {item.degree ? <Text>, {item.degree}</Text> : null}
-                </Text>
-                <Text style={styles.bold}>{item.year}</Text>
+              <View key={item.id} style={{ marginTop: 4 }}>
+                <View style={styles.rowBetween}>
+                  <Text>
+                    <Text style={styles.bold}>{item.school || "Institution"}</Text>
+                    {item.degree ? <Text>, {item.degree}</Text> : null}
+                  </Text>
+                  <Text style={styles.bold}>{item.year}</Text>
+                </View>
+                {item.description?.trim() ? (
+                  <Text style={{ marginTop: 2, fontSize: 10.5, color: "#444" }}>{item.description}</Text>
+                ) : null}
               </View>
             ))}
           </View>
@@ -152,6 +158,21 @@ export function ClassicPdf({ data }: { data: ResumeData }) {
                 </Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {languages.length > 0 && (
+          <View style={styles.sectionWrap}>
+            <Text style={styles.sectionTitle}>Languages:</Text>
+            <Text style={{ marginTop: 2 }}>
+              {languages.map((l, i) => (
+                <Text key={l.id}>
+                  {i > 0 ? <Text>{"  |  "}</Text> : null}
+                  <Text style={styles.bold}>{l.language}</Text>
+                  <Text>{" – "}{l.level}</Text>
+                </Text>
+              ))}
+            </Text>
           </View>
         )}
       </Page>

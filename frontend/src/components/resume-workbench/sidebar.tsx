@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Bookmark, BriefcaseBusiness, Clock3, FileText, Plus } from "lucide-react"
+import { Bookmark, Clock3, FileText, Plus } from "lucide-react"
 
 import type { JobStatus, SavedJob } from "@/components/resume-workbench/types.ts"
 import { useResumeTemplates } from "@/api/hooks/useResumeTemplates.ts"

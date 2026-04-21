@@ -10,7 +10,9 @@ import { Badge } from "@/components/ui/badge.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
+import { Textarea } from "@/components/ui/textarea.tsx"
 import { EducationSection } from "./education-section.tsx"
+import { LanguagesSection } from "./languages-section.tsx"
 
 export function ProfileSettingsPage() {
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
@@ -23,7 +25,7 @@ export function ProfileSettingsPage() {
     setDraftSettings(settings)
   }, [settings])
 
-  const { profile, education, skillPool } = draftSettings
+  const { profile, education, skillPool, languages, experienceContext, applicationContext } = draftSettings
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(draftSettings) !== JSON.stringify(settings),
     [draftSettings, settings],
@@ -228,6 +230,49 @@ export function ProfileSettingsPage() {
               education: value,
             }))}
         />
+
+        <LanguagesSection
+          languages={languages}
+          onChange={(value) =>
+            patchSettings((current) => ({
+              ...current,
+              languages: value,
+            }))}
+        />
+
+        <Card className="border-border/70 bg-card/85 backdrop-blur-sm">
+          <CardHeader className="gap-2">
+            <CardTitle className="text-xl">Experience Context</CardTitle>
+            <CardDescription>
+              Describe your work history, achievements, and key experiences. Used by AI to tailor your resume.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={experienceContext}
+              onChange={(e) => patchSettings((current) => ({ ...current, experienceContext: e.target.value }))}
+              placeholder="e.g. 5 years as a frontend engineer at startups, led redesign of checkout flow that increased conversion 18%, strong in React and TypeScript..."
+              className="min-h-36 resize-y"
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/85 backdrop-blur-sm">
+          <CardHeader className="gap-2">
+            <CardTitle className="text-xl">Application Context</CardTitle>
+            <CardDescription>
+              Optional personal context for job applications such as work authorization, location, and preferences.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={applicationContext}
+              onChange={(e) => patchSettings((current) => ({ ...current, applicationContext: e.target.value }))}
+              placeholder="e.g. Canadian citizen, authorized to work in Canada and US, open to remote or Toronto hybrid, preferred start date Q2..."
+              className="min-h-36 resize-y"
+            />
+          </CardContent>
+        </Card>
 
         <Card className="border-border/70 bg-card/85 backdrop-blur-sm">
           <CardHeader className="gap-2">

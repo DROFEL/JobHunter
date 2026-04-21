@@ -17,6 +17,9 @@ type ProfileSettingsPatch = {
   profile?: Partial<ProfileSettingsDTO["profile"]>
   education?: ProfileSettingsDTO["education"]
   skillPool?: ProfileSettingsDTO["skillPool"]
+  languages?: ProfileSettingsDTO["languages"]
+  experienceContext?: ProfileSettingsDTO["experienceContext"]
+  applicationContext?: ProfileSettingsDTO["applicationContext"]
 }
 
 const defaultProfileSettings: ProfileSettingsDTO = {
@@ -29,6 +32,9 @@ const defaultProfileSettings: ProfileSettingsDTO = {
   },
   education: [],
   skillPool: [],
+  languages: [],
+  experienceContext: "",
+  applicationContext: "",
 }
 
 /** Fetch the current user's profile settings. */

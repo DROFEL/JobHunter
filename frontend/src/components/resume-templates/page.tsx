@@ -38,6 +38,7 @@ const EMPTY_RESUME: JobResume = {
   experiences: [],
   projects: [],
   skillTypes: [],
+  enabledLanguageIds: [],
 }
 
 type EditingTemplate = {
@@ -148,6 +149,9 @@ export function ResumeTemplatesPage() {
       ...currentResume,
       profile: settings.profile,
       education: settings.education,
+      languages: settings.languages.filter((lang) =>
+        currentResume.enabledLanguageIds.includes(lang.id),
+      ),
     }),
     [currentResume, settings],
   )

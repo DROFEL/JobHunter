@@ -14,7 +14,8 @@ dependencies = [
   "alembic>=1.13,<2",
   "langchain", 
   "langchain-openrouter",
-  "minio",
+  "asyncio",
+  "confluent-kafka",
   "db",
   "common",
 ]

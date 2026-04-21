@@ -4,7 +4,8 @@ import type { ResumeData } from "@/components/resume-workbench/types.ts"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
-import { createBlankEducation } from "@/utils/resume-form-helpers.ts";
+import { Textarea } from "@/components/ui/textarea.tsx"
+import { createBlankEducation } from "@/utils/resume-form-helpers.ts"
 
 interface EducationSectionProps {
   education: ResumeData["education"]
@@ -16,7 +17,7 @@ export function EducationSection({ education, onChange }: EducationSectionProps)
     onChange([...education, createBlankEducation()])
   }
 
-  function updateEducation(index: number, field: "school" | "degree" | "year", value: string) {
+  function updateEducation(index: number, field: "school" | "degree" | "year" | "description", value: string) {
     const nextEducation = [...education]
     nextEducation[index] = { ...nextEducation[index], [field]: value }
     onChange(nextEducation)
@@ -54,6 +55,13 @@ export function EducationSection({ education, onChange }: EducationSectionProps)
                 placeholder="Year"
               />
             </div>
+
+            <Textarea
+              value={item.description}
+              onChange={(event) => updateEducation(index, "description", event.target.value)}
+              placeholder="Description (optional)"
+              className="min-h-20 resize-none"
+            />
 
             <div className="flex justify-end">
               <Button type="button" size="sm" variant="ghost" onClick={() => removeEducation(index)}>

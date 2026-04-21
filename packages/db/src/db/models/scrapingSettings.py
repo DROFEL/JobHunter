@@ -13,12 +13,12 @@ if TYPE_CHECKING:
     from db.models.company import Company
 
 
-class Posting(Base):
-    __tablename__ = "postings_tbl"
+class ScrapingSettings(Base):
+    __tablename__ = "scraping_jobs_tbl"
 
-    posting_id: Mapped[UUID] = mapped_column(
+    posting_id: Mapped[UUID | None] = mapped_column(
         PGUUID(as_uuid=True),
-        primary_key=True,
+        ForeignKey("postings_tbl.posting_id"),
         server_default=text("gen_random_uuid()"),
     )
     external_id: Mapped[str | None] = mapped_column(Text, nullable=True)

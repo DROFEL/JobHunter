@@ -32,6 +32,9 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
       "Testing",
       "Git",
     ],
+    languages: [],
+    experienceContext: "",
+    applicationContext: "",
   },
 
   jobs: [
@@ -105,6 +108,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
             skills: ["Design Systems", "Experimentation"],
           },
         ],
+        enabledLanguageIds: [],
       },
     },
     {
@@ -131,6 +135,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
         experiences: [],
         projects: [],
         skillTypes: [],
+        enabledLanguageIds: [],
       },
     },
     {
@@ -157,6 +162,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
         experiences: [],
         projects: [],
         skillTypes: [],
+        enabledLanguageIds: [],
       },
     },
     {
@@ -183,6 +189,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
         experiences: [],
         projects: [],
         skillTypes: [],
+        enabledLanguageIds: [],
       },
     },
   ],
@@ -229,6 +236,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
           { id: "skill-type-1", name: "Frontend", skills: ["React", "TypeScript", "Tailwind CSS", "Accessibility"] },
           { id: "skill-type-2", name: "Product & Collaboration", skills: ["Design Systems", "Experimentation"] },
         ],
+        enabledLanguageIds: [],
       },
     },
     {
@@ -258,6 +266,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
           { id: "st-fs-1", name: "Frontend", skills: ["React", "TypeScript", "Tailwind CSS"] },
           { id: "st-fs-2", name: "Backend", skills: ["Node.js", "Python", "PostgreSQL"] },
         ],
+        enabledLanguageIds: [],
       },
     },
   ],

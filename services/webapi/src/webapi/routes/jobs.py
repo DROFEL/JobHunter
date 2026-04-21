@@ -1,3 +1,5 @@
+from confluent_kafka import Producer
+
 from typing import Annotated, Any
 from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -66,6 +68,28 @@ def get_job(
         raise HTTPException(status_code=404, detail="Job not found")
     return _to_response(posting)
 
+
+@router.post("/scrape", status_code=status.HTTP_202_ACCEPTED)
+def scrape_job(
+    payload: dict[str, Any],
+    external_user_id: str = Depends(get_external_user_id),
+    db: Session = Depends(get_db),
+):
+    p = Producer({"bootstrap.servers": "localhost:9094"})
+
+    def delivery_report(err, msg):
+        if err is not None:
+            print(f"Delivery failed: {err}")
+        else:
+            print(f"Delivered to {msg.topic()} [{msg.partition()}] @ offset {msg.offset()}")
+
+    p.produce(
+        "jobs",
+        key="job-123",
+        value='{"jobId":"job-123","url":"https://example.com"}',
+        callback=delivery_report,
+    )
+    p.flush()
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_job(
