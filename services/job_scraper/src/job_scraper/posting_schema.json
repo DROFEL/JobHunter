@@ -6,7 +6,6 @@
   "required": [
     "url",
     "posting_id",
-    "external_id",
     "position_name",
     "company_name",
     "posting_date",
@@ -19,13 +18,16 @@
       "format": "uri",
       "description": "The URL of the job posting."
     },
+    "company_logo_url": {
+      "type": "string"
+    },
     "posting_id": {
       "type": "string",
-      "description": "Internal identifier for the posting."
+      "description": "Internal identifier for the posting like jobid in url."
     },
     "external_id": {
       "type": "string",
-      "description": "External identifier for the posting."
+      "description": "External identifier for the posting. Usually a field on the page with particular company id"
     },
     "position_name": {
       "type": "string",

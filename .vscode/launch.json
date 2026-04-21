@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Vite app in Chrome",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend",
+      "sourceMaps": true,
+      "trace": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "sourceMapPathOverrides": {
+        "/src/*": "${workspaceFolder}/src/*",
+        "src/*": "${workspaceFolder}/src/*",
+        "/@fs/*": "*",
+        "/*": "${workspaceFolder}/*"
+      },
+      "preLaunchTask": "vite:dev"
+    }
+  ]
+}

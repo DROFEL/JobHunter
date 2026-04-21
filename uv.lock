@@ -1048,6 +1048,7 @@ version = "0.1.0"
 source = { editable = "services/job_scraper" }
 dependencies = [
     { name = "asyncio" },
+    { name = "beautifulsoup4" },
     { name = "browser-use" },
     { name = "common" },
     { name = "confluent-kafka" },
@@ -1061,6 +1062,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "asyncio" },
+    { name = "beautifulsoup4" },
     { name = "browser-use" },
     { name = "common", editable = "packages/common" },
     { name = "confluent-kafka" },
