@@ -32,6 +32,16 @@ const EMPTY_RESUME: JobResume = {
   enabledLanguageIds: [],
 }
 
+function seedResumeFromJob(job: SavedJob): JobResume {
+  return job.resume ?? {
+    ...EMPTY_RESUME,
+    targetPosition: job.title,
+    targetCompany: job.company,
+    jobPostingLink: job.url,
+    aiJobSummary: job.summary,
+  }
+}
+
 export function ResumeWorkbenchPage() {
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
   const { data: jobs = [] } = useSavedJobs()
@@ -42,7 +52,7 @@ export function ResumeWorkbenchPage() {
 
   const [selectedJobId, setSelectedJobId] = useState<string>("")
   const [editingResume, setEditingResume] = useState<JobResume | null>(null)
-  const [editingMeta, setEditingMeta] = useState<{ status?: JobStatus; employmentType?: string; salary?: string }>({})
+  const [editingMeta, setEditingMeta] = useState<{ status?: JobStatus; employmentType?: string; salary?: string; location?: string; deadline?: string }>({})
   const [isDesktop, setIsDesktop] = useState(false)
 
   // Seed selection once when jobs first arrive
@@ -51,7 +61,7 @@ export function ResumeWorkbenchPage() {
     if (jobs.length > 0 && !initialized.current) {
       initialized.current = true
       setSelectedJobId(jobs[0].id)
-      setEditingResume(jobs[0].resume)
+      setEditingResume(seedResumeFromJob(jobs[0]))
     }
   }, [jobs])
 
@@ -91,7 +101,7 @@ export function ResumeWorkbenchPage() {
       saveResume({ id: selectedJobId, resume: editingResume })
     }
     setSelectedJobId(job.id)
-    setEditingResume(job.resume)
+    setEditingResume(seedResumeFromJob(job))
     setEditingMeta({})
   }
 
@@ -99,7 +109,7 @@ export function ResumeWorkbenchPage() {
     setEditingResume(resume)
   }
 
-  function handleJobMetaChange(fields: { status?: JobStatus; employmentType?: string; salary?: string }) {
+  function handleJobMetaChange(fields: { status?: JobStatus; employmentType?: string; salary?: string; location?: string; deadline?: string }) {
     setEditingMeta((prev) => ({ ...prev, ...fields }))
     if (selectedJobId) {
       updateJob({ id: selectedJobId, ...fields })
@@ -122,6 +132,7 @@ export function ResumeWorkbenchPage() {
         employmentType: "",
         summary: "",
         url: "",
+        deadline: "",
         saved: true,
         status: "Found",
         resume,
@@ -129,19 +140,21 @@ export function ResumeWorkbenchPage() {
       {
         onSuccess: (newJob) => {
           setSelectedJobId(newJob.id)
-          setEditingResume(newJob.resume)
+          setEditingResume(seedResumeFromJob(newJob))
         },
       },
     )
   }
 
-  const currentResume = editingResume ?? selectedJob?.resume ?? EMPTY_RESUME
+  const currentResume = editingResume ?? (selectedJob ? seedResumeFromJob(selectedJob) : EMPTY_RESUME)
 
   const jobMeta = selectedJob
     ? {
         status: (editingMeta.status ?? selectedJob.status) as JobStatus,
         employmentType: editingMeta.employmentType ?? selectedJob.employmentType,
         salary: editingMeta.salary ?? selectedJob.salary,
+        location: editingMeta.location ?? selectedJob.location,
+        deadline: editingMeta.deadline ?? selectedJob.deadline,
       }
     : undefined
 
@@ -186,7 +199,7 @@ export function ResumeWorkbenchPage() {
               onCreateFromTemplate={handleCreateFromTemplate}
             />
             {renderDisabledPanel(
-              <ResumeForm data={currentResume} onChange={handleResumeChange} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
+              <ResumeForm data={currentResume} onChange={handleResumeChange} selectedJobId={selectedJobId} scrapeStatus={selectedJob?.scrapeStatus ?? null} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
               "Add or save a job posting to start editing a resume.",
             )}
             {renderDisabledPanel(
@@ -224,7 +237,7 @@ export function ResumeWorkbenchPage() {
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
               {renderDisabledPanel(
-                <ResumeForm data={currentResume} onChange={handleResumeChange} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
+                <ResumeForm data={currentResume} onChange={handleResumeChange} selectedJobId={selectedJobId} scrapeStatus={selectedJob?.scrapeStatus ?? null} jobMeta={jobMeta} onJobMetaChange={handleJobMetaChange} />,
                 "Add or save a job posting to start editing a resume.",
               )}
             </div>

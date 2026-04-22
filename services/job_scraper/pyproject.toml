@@ -12,11 +12,11 @@ dependencies = [
   "confluent-kafka",
   "langchain", 
   "langchain-openrouter",
+  "tenacity",
   "crawlee",
   "crawlee[playwright]",
   "beautifulsoup4",
   "asyncio",
-  "minio",
   "db",
   "common",
 ]

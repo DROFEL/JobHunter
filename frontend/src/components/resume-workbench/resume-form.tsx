@@ -1,27 +1,24 @@
 import { Card } from "@/components/ui/card.tsx"
-import type { JobResume, JobStatus } from "@/components/resume-workbench/types.ts"
+import type { JobResume } from "@/components/resume-workbench/types.ts"
+import { ResumeFormContext, type JobMeta } from "./resume-form-context.tsx"
 import { ResumeHeaderSection } from "./resume-form/resume-header-section.tsx"
 import { ResumeContentForm } from "./resume-content-form.tsx"
-
-interface JobMeta {
-  status: JobStatus
-  employmentType: string
-  salary: string
-}
 
 interface ResumeFormProps {
   data: JobResume
   onChange: (data: JobResume) => void
+  selectedJobId: string
+  scrapeStatus?: string | null
   jobMeta?: JobMeta
   onJobMetaChange?: (fields: Partial<JobMeta>) => void
 }
 
-export function ResumeForm({ data, onChange, jobMeta, onJobMetaChange }: ResumeFormProps) {
+export function ResumeForm({ data, onChange, selectedJobId, scrapeStatus = null, jobMeta, onJobMetaChange }: ResumeFormProps) {
   function updateField<K extends keyof JobResume>(field: K, value: JobResume[K]) {
     onChange({ ...data, [field]: value })
   }
 
-  function handleGenerateAISummary() {
+  function onGenerateSummary() {
     const headline = data.position || data.targetPosition || "Frontend engineer"
     const company = data.targetCompany ? ` for opportunities like ${data.targetCompany}` : ""
     const highlightedSkills = data.skillTypes
@@ -37,18 +34,14 @@ export function ResumeForm({ data, onChange, jobMeta, onJobMetaChange }: ResumeF
   }
 
   return (
-    <div className="space-y-3">
-      <Card className="overflow-hidden">
-        <ResumeHeaderSection
-          data={data}
-          jobMeta={jobMeta}
-          updateField={updateField}
-          onJobMetaChange={onJobMetaChange}
-          onGenerateSummary={handleGenerateAISummary}
-        />
-      </Card>
+    <ResumeFormContext.Provider value={{ data, onChange, updateField, jobMeta, onJobMetaChange, selectedJobId, scrapeStatus, onGenerateSummary }}>
+      <div className="space-y-3">
+        <Card className="overflow-hidden">
+          <ResumeHeaderSection />
+        </Card>
 
-      <ResumeContentForm data={data} onChange={onChange} />
-    </div>
+        <ResumeContentForm />
+      </div>
+    </ResumeFormContext.Provider>
   )
 }

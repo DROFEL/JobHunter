@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from db.models.resume_template import ResumeTemplate
 from db.models.user import User
-from db.session import get_db
+from db.session import get_fastapi_db
 
 router = APIRouter(prefix="/resume-templates", tags=["resume-templates"])
 
@@ -67,7 +67,7 @@ def _to_response(template: ResumeTemplate) -> ResumeTemplateResponse:
 @router.get("", response_model=list[ResumeTemplateResponse])
 def list_templates(
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     templates = db.query(ResumeTemplate).filter(ResumeTemplate.user_id == user_uuid).all()
@@ -78,7 +78,7 @@ def list_templates(
 def get_template(
     template_id: UUID,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     template = (
@@ -95,7 +95,7 @@ def get_template(
 def create_template(
     payload: ResumeTemplateCreate,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     template = ResumeTemplate(
@@ -114,7 +114,7 @@ def patch_template(
     template_id: UUID,
     payload: ResumeTemplatePatch,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     template = (
@@ -139,7 +139,7 @@ def patch_template(
 def delete_template(
     template_id: UUID,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     template = (

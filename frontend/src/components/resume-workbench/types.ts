@@ -78,7 +78,9 @@ export interface SavedJob {
   employmentType: string
   summary: string
   url: string
+  deadline: string
   saved: boolean
   status: JobStatus
-  resume: JobResume
+  scrapeStatus: string | null
+  resume: JobResume | null
 }

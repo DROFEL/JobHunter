@@ -1,27 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { defaultProfileSettings, useProfileSettingsQuery } from "@/api/hooks/useProfileSettings.ts"
-import type { JobResume } from "@/components/resume-workbench/types.ts"
+import { useResumeForm } from "./resume-form-context.tsx"
 import { ProjectsSection } from "./resume-form/projects-section.tsx"
 import { ResumeSummarySection } from "./resume-form/resume-summary-section.tsx"
 import { SkillsSection } from "./resume-form/skills-section.tsx"
 import { WorkExperienceSection } from "./resume-form/work-experience-section.tsx"
 import { LanguagesToggleSection } from "./resume-form/languages-toggle-section.tsx"
 
-interface ResumeContentFormProps {
-  data: JobResume
-  onChange: (data: JobResume) => void
-}
-
 const SUMMARY_LIMIT = 500
 const PROJECT_DESC_LIMIT = 200
 
-export function ResumeContentForm({ data, onChange }: ResumeContentFormProps) {
+export function ResumeContentForm() {
+  const { data, updateField } = useResumeForm()
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
   const skillPool = settings.skillPool.map((skill) => skill.trim()).filter(Boolean)
-
-  function updateField<K extends keyof JobResume>(field: K, value: JobResume[K]) {
-    onChange({ ...data, [field]: value })
-  }
 
   function handleGenerateSummary() {
     const headline = data.position || "Software engineer"

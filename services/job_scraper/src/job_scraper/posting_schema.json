@@ -5,7 +5,6 @@
   "additionalProperties": false,
   "required": [
     "url",
-    "posting_id",
     "position_name",
     "company_name",
     "posting_date",
@@ -19,7 +18,8 @@
       "description": "The URL of the job posting."
     },
     "company_logo_url": {
-      "type": "string"
+      "type": "string",
+      "description": "URL to the company logo"
     },
     "posting_id": {
       "type": "string",

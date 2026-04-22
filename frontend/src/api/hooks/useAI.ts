@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { z } from "zod"
 import { api } from "@/api/client.ts"
 
@@ -15,9 +15,25 @@ interface AIGenerateRequest {
   url?: string
 }
 
+interface FetchPostingRequest {
+  posting_id: string
+  url: string
+}
+
 export function useAIGenerate() {
   return useMutation({
     mutationFn: (body: AIGenerateRequest) =>
       api.post("/ai/generate", aiGenerateResponseSchema, body),
+  })
+}
+
+export function useFetchPosting() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: FetchPostingRequest) =>
+      api.post("/ai/fetch-posting", z.null(), body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savedJobs"] })
+    },
   })
 }

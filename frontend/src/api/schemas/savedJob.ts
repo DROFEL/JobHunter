@@ -25,8 +25,8 @@ const projectItemSchema = z.object({
 // Mirrors SkillTypeItem
 const skillTypeItemSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  skills: z.array(z.string()),
+  name: z.string().default(""),
+  skills: z.array(z.string()).default([]),
 })
 
 // Mirrors JobResume
@@ -54,9 +54,11 @@ export const savedJobSchema = z.object({
   employmentType: z.string(),
   summary: z.string(),
   url: z.string(),
+  deadline: z.string().default(""),
   saved: z.boolean(),
   status: z.enum(JOB_STATUSES),
-  resume: jobResumeSchema,
+  scrapeStatus: z.string().nullable().default(null),
+  resume: jobResumeSchema.nullable(),
 })
 
 export type JobResumeDTO = z.infer<typeof jobResumeSchema>

@@ -437,6 +437,16 @@ wheels = [
 name = "common"
 version = "0.1.0"
 source = { editable = "packages/common" }
+dependencies = [
+    { name = "minio" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "minio" },
+    { name = "pydantic", specifier = ">=2.0,<3" },
+]
 
 [[package]]
 name = "confluent-kafka"
@@ -1056,7 +1066,7 @@ dependencies = [
     { name = "db" },
     { name = "langchain" },
     { name = "langchain-openrouter" },
-    { name = "minio" },
+    { name = "tenacity" },
 ]
 
 [package.metadata]
@@ -1071,7 +1081,7 @@ requires-dist = [
     { name = "db", editable = "packages/db" },
     { name = "langchain" },
     { name = "langchain-openrouter" },
-    { name = "minio" },
+    { name = "tenacity" },
 ]
 
 [[package]]

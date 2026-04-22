@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from db.models.user import User
 from webapi.models.user import UserData, UserResponse, UserUpsertRequest
-from db.session import get_db
+from db.session import get_fastapi_db
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -50,7 +50,7 @@ def merge_user_data(existing_data: dict | None, updates: dict) -> dict:
 
 
 @router.get("", response_model=UserResponse)
-def get_user(external_user_id: str = Depends(get_external_user_id), db: Session = Depends(get_db)):
+def get_user(external_user_id: str = Depends(get_external_user_id), db: Session = Depends(get_fastapi_db)):
     user = db.query(User).filter(User.user_external_id == external_user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -65,7 +65,7 @@ def upsert_single_user(
     payload: UserUpsertRequest,
     response: Response,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user = db.query(User).filter(User.user_external_id == external_user_id).first()
     merged_data = merge_user_data(
@@ -94,7 +94,7 @@ def upsert_single_user(
 def patch_single_user(
     payload: UserUpsertRequest,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user = db.query(User).filter(User.user_external_id == external_user_id).first()
 

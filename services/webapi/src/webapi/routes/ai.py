@@ -1,7 +1,8 @@
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status, HTTPException
 from pydantic import BaseModel
+from ..services.ScrapeJobService import fetch_posting
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -13,6 +14,10 @@ class AIGenerateRequest(BaseModel):
     prompt: str
     context: str = ""
     url: str = ""
+    
+class FetchPostingRequest(BaseModel):
+    url: str
+    posting_id: str
 
 
 class AIGenerateResponse(BaseModel):
@@ -29,3 +34,9 @@ _STUBS: dict[CallType, str] = {
 @router.post("/generate", response_model=AIGenerateResponse)
 def generate(body: AIGenerateRequest) -> AIGenerateResponse:
     return AIGenerateResponse(result=_STUBS[body.call_type])
+
+@router.post("/fetch-posting", status_code=status.HTTP_202_ACCEPTED)
+def fetch_posting_endpoint(body: FetchPostingRequest) -> None:
+    if not fetch_posting(url=body.url, posting_id=body.posting_id):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to add job to queue, try again later or contact administrator")

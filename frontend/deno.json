@@ -11,7 +11,7 @@
     "@/": "./src/"
   },
   "allowScripts": {
-    "allow": [],
+    "allow": ["npm:protobufjs@8.0.1"],
     "deny": ["npm:core-js@3.49.0", "npm:esbuild@0.27.7", "npm:msw@2.13.4"]
   }
 }

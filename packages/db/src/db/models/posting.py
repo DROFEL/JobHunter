@@ -32,6 +32,7 @@ class Posting(Base):
         ForeignKey("user_tbl.user_id"),
         nullable=True,
     )
+    board_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str | None] = mapped_column(Text, nullable=True)
     scrapeStatus: Mapped[str | None] = mapped_column(Text, nullable=True)

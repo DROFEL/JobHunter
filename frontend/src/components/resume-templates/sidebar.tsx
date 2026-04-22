@@ -39,12 +39,14 @@ export function TemplateSidebar({ templates, selectedId, onSelect, onNew, onDele
           const selected = template.id === selectedId
 
           return (
-            <button
+            <div
               key={template.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(template)}
+              onKeyDown={(e) => e.key === "Enter" && onSelect(template)}
               className={cn(
-                "group w-full rounded-xl border p-4 text-left transition-all",
+                "group w-full cursor-pointer rounded-xl border p-4 text-left transition-all",
                 selected
                   ? "border-primary/30 bg-accent shadow-sm"
                   : "border-border/60 bg-background hover:border-primary/20 hover:bg-accent/50",
@@ -76,7 +78,7 @@ export function TemplateSidebar({ templates, selectedId, onSelect, onNew, onDele
                   <Trash2 className="size-3.5" />
                 </button>
               </div>
-            </button>
+            </div>
           )
         })}
       </CardContent>

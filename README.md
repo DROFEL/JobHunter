@@ -21,29 +21,33 @@ A full-stack job search automation platform — scrape job postings, tailor resu
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Browser                              │
-│              React 19 + TanStack Router/Query               │
-└────────────────────────┬────────────────────────────────────┘
-                         │ REST (JSON)
-┌────────────────────────▼────────────────────────────────────┐
-│                     WebAPI (FastAPI)                        │
-│   /users  /jobs  /resume-templates  /profile  /ai          │
-└──────┬──────────────────────────────────────┬───────────────┘
-       │ SQLAlchemy ORM                        │ (future: produce)
-┌──────▼──────────┐                  ┌────────▼────────────────┐
-│  PostgreSQL 17  │                  │    Apache Kafka 4.1      │
-│  Users          │                  │    topic: jobs           │
-│  Postings       │                  └────┬────────────────┬───┘
-│  Companies      │                       │ consume        │ consume
-│  ResumeTemplates│              ┌────────▼──────┐  ┌──────▼──────────────┐
-└─────────────────┘              │  Job Scraper  │  │   Job Applier       │
-                                 │  Playwright   │  │   browser-use (WIP) │
-┌────────────────────────────────│  LangChain +  │  └─────────────────────┘
-│  MinIO (S3-compatible)         │  OpenRouter   │
-│  Raw HTML / extracted JSON ◄───┘               │
-└────────────────────────────────────────────────┘
-
-  Jaeger (OpenTelemetry) — distributed tracing across all services
-  Prometheus — metrics scraping from API and workers (port 9090)
+│     React 19 + TanStack Router/Query + OTel JS SDK          │
+└────────────┬──────────────────────────┬─────────────────────┘
+             │ REST (JSON)              │ OTLP/HTTP traces
+┌────────────▼──────────────┐  ┌────────▼────────────────────┐
+│     WebAPI (FastAPI)      │  │      OTel Collector          │
+│  /users /jobs /ai ...     │  │  OTLP gRPC :4317             │
+│  OTLP → Collector         ├──►  OTLP HTTP :4318             │
+└──────┬────────────────────┘  └──┬──────────┬───────────────┘
+       │ SQLAlchemy ORM           │ traces   │ metrics
+┌──────▼──────────┐        ┌──────▼──────┐ ┌▼────────────────┐
+│  PostgreSQL 17  │        │   Jaeger    │ │   Prometheus     │
+└─────────────────┘        │  UI :16686  │ │   + Grafana      │
+                           └─────────────┘ └─────────────────-┘
+┌─────────────────────────────────────────────────────────────┐
+│                  Apache Kafka 4.1  topic: jobs              │
+└────────────┬─────────────────────────────┬──────────────────┘
+             │ consume                      │ consume
+    ┌────────▼──────┐               ┌───────▼─────────────┐
+    │  Job Scraper  │               │   Job Applier (WIP) │
+    │  Playwright   │               │   browser-use       │
+    │  LangChain +  │               └─────────────────────┘
+    │  OpenRouter   │
+    └───────┬───────┘
+┌───────────▼─────────────┐    ┌──────────────────────┐
+│  MinIO (S3-compatible)  │    │  Elasticsearch        │
+│  Raw HTML / JSON        │    │  OTel logs :9200      │
+└─────────────────────────┘    └──────────────────────┘
 ```
 
 ---
@@ -83,7 +87,8 @@ Persistent profile data (skills pool, languages + proficiency, education, work h
 | Web scraping | Crawlee + Playwright (headless Firefox) |
 | LLM orchestration | LangChain + OpenRouter |
 | Browser automation | browser-use |
-| Observability | Jaeger (OpenTelemetry OTLP) + Prometheus |
+| Observability | OTel Collector → Jaeger (traces) + Prometheus (metrics) + Elasticsearch (logs) |
+| Dashboards | Grafana (auto-provisioned datasources) |
 | Package management | uv (workspace with shared `db` and `common` packages) |
 
 ### Frontend
@@ -104,7 +109,10 @@ Persistent profile data (skills pool, languages + proficiency, education, work h
 
 ```
 /
-├── compose.yml                  # PostgreSQL, Kafka, MinIO, Jaeger
+├── compose.yml                  # PostgreSQL, Kafka, MinIO, Jaeger, OTel Collector, Elasticsearch, Grafana
+├── otel-collector-config.yml    # OTel Collector pipeline config
+├── prometheus.yml               # Prometheus scrape targets
+├── grafana/provisioning/        # Auto-provisioned Grafana datasources
 ├── frontend/                    # React app (Vite)
 ├── services/
 │   ├── webapi/                  # FastAPI REST API
@@ -134,8 +142,10 @@ Persistent profile data (skills pool, languages + proficiency, education, work h
 - **MinIO for artifact storage** — raw crawl results and extracted JSON are persisted independently of the database, providing a replay source and audit trail.
 - **Alembic migrations** — schema changes are versioned and repeatable across environments.
 - **Health endpoint** (`GET /health`) on the API for container liveness checks.
-- **Distributed tracing** via Jaeger/OpenTelemetry — request traces span the API and background services for latency visibility and debugging.
-- **Prometheus metrics** — scrapes the API `/metrics` endpoint every 15s; 15-day TSDB retention; config mounted from `prometheus.yml` for easy target extension.
+- **OTel Collector as single ingestion point** — frontend (OTLP/HTTP) and backend services (OTLP/gRPC) both send telemetry to the collector, which fans out to the right backend per signal type: traces → Jaeger, metrics → Prometheus, logs → Elasticsearch.
+- **Distributed tracing** — frontend spans (fetch, document load, user interactions) are correlated with backend spans via propagated trace context headers.
+- **Grafana** — auto-provisioned with Prometheus, Jaeger, and Elasticsearch datasources; no manual setup required after `docker compose up`.
+- **Prometheus metrics** — 15-day TSDB retention; scrapes both the WebAPI and the OTel Collector's Prometheus exporter endpoint.
 - **KRaft-mode Kafka** — no ZooKeeper dependency; simpler ops that mirrors a real production topology.
 
 ---

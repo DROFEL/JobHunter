@@ -12,6 +12,7 @@ import {
   type ResumeTemplateDTO,
 } from "@/api/hooks/useResumeTemplates.ts"
 import { ResumeContentForm } from "@/components/resume-workbench/resume-content-form.tsx"
+import { ResumeFormContext } from "@/components/resume-workbench/resume-form-context.tsx"
 import { ResumePreview } from "@/components/resume-workbench/resume-preview.tsx"
 import type { JobResume, ResumeData } from "@/components/resume-workbench/types.ts"
 import {
@@ -200,7 +201,17 @@ export function ResumeTemplatesPage() {
           </div>
         </CardHeader>
       </Card>
-      <ResumeContentForm data={currentResume} onChange={handleResumeChange} />
+      <ResumeFormContext.Provider value={{
+        data: currentResume,
+        onChange: handleResumeChange,
+        updateField: (field, value) => handleResumeChange({ ...currentResume, [field]: value }),
+        jobMeta: undefined,
+        onJobMetaChange: undefined,
+        selectedJobId: "",
+        onGenerateSummary: () => {},
+      }}>
+        <ResumeContentForm />
+      </ResumeFormContext.Provider>
     </div>
   )
 

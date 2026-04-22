@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Bookmark, Clock3, FileText, Plus } from "lucide-react"
+import { Bookmark, CalendarClock, Clock3, FileText, MapPin, Plus } from "lucide-react"
 
 import type { JobStatus, SavedJob } from "@/components/resume-workbench/types.ts"
 import { useResumeTemplates } from "@/api/hooks/useResumeTemplates.ts"
@@ -29,6 +29,11 @@ const STATUS_STYLES: Record<JobStatus, string> = {
   Interview: "bg-amber-500/15 text-amber-500",
   Offer:     "bg-green-500/15 text-green-600",
   Rejected:  "bg-destructive/15 text-destructive",
+}
+
+function formatDate(value: string) {
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
 }
 
 function getInitials(company: string) {
@@ -181,8 +186,8 @@ export function Sidebar({ jobs, selectedJobId, onSelectJob, onCreateFromTemplate
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Badge variant="secondary">{job.salary}</Badge>
-                      <Badge variant="outline">{job.employmentType}</Badge>
+                      {job.salary && <Badge variant="secondary">{job.salary}</Badge>}
+                      {job.employmentType && <Badge variant="outline">{job.employmentType}</Badge>}
                       <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", STATUS_STYLES[job.status])}>
                         {job.status}
                       </span>
@@ -191,12 +196,28 @@ export function Sidebar({ jobs, selectedJobId, onSelectJob, onCreateFromTemplate
                 </div>
 
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  {job.posted && (
+                  {job.location && (
                     <div className="flex items-center gap-2">
-                      <Clock3 className="size-4" />
-                      <span>{job.posted}</span>
+                      <MapPin className="size-4 shrink-0" />
+                      <span className="truncate">{job.location}</span>
                     </div>
                   )}
+                  {job.posted && (
+                    <div className="flex items-center gap-2">
+                      <Clock3 className="size-4 shrink-0" />
+                      <span>{formatDate(job.posted)}</span>
+                    </div>
+                  )}
+                  {job.deadline && (() => {
+                    const msLeft = new Date(job.deadline).getTime() - Date.now()
+                    const urgent = msLeft <= 2 * 24 * 60 * 60 * 1000
+                    return (
+                      <div className={cn("flex items-center gap-2", urgent ? "text-amber-500" : "text-muted-foreground")}>
+                        <CalendarClock className="size-4 shrink-0" />
+                        <span>Due {formatDate(job.deadline)}</span>
+                      </div>
+                    )
+                  })()}
                 </div>
               </button>
             )

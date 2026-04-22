@@ -1,14 +1,26 @@
-from fastapi import FastAPI
-from db import Base, engine
+from fastapi import FastAPI, Depends, Header, HTTPException
+from db import Base, engine, get_fastapi_db
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from webapi.routes.user import router as users_router
 from webapi.routes.profileSettings import router as profileSettings_router
 from webapi.routes.resumeTemplates import router as resumeTemplates_router
 from webapi.routes.jobs import router as jobs_router
 from webapi.routes.ai import router as ai_router
+from typing import Annotated
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="JobHunter API")
+
+def get_external_user_id(
+    Authentication: Annotated[str | None, Header()] = None,
+) -> str:
+    if not Authentication:
+        raise HTTPException(status_code=401, detail="Missing Authentication header")
+    return Authentication
+
+DBSession = Annotated[Session, Depends(get_fastapi_db)]
+ExternalUserId = Annotated[str, Depends(get_external_user_id)]
 
 app.add_middleware(
     CORSMiddleware,

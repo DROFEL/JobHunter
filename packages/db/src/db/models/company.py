@@ -21,6 +21,7 @@ class Company(Base):
         primary_key=True,
         server_default=text("gen_random_uuid()"),
     )
+    name: Mapped[str | None] = mapped_column(Text, nullable=True)
     context: Mapped[str | None] = mapped_column(Text, nullable=True)
     logo: Mapped[str | None] = mapped_column(Text, nullable=True)
     data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)

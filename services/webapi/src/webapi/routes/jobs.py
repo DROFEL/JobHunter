@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from db.models.posting import Posting
 from db.models.user import User
-from db.session import get_db
+from db.session import get_fastapi_db
+from webapi.models.posting import JobResume, PostingData
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -28,14 +29,17 @@ def get_user_uuid(external_user_id: str, db: Session) -> UUID:
     return user.user_id
 
 
+_POSTING_DATA_DEFAULTS: dict[str, Any] = PostingData().model_dump(mode="json")
+
 def _to_response(posting: Posting) -> dict[str, Any]:
-    data = dict(posting.data or {})
+    data = {**_POSTING_DATA_DEFAULTS, **(posting.data or {})}
     data["id"] = str(posting.posting_id)
+    data["scrapeStatus"] = posting.scrapeStatus
     return data
 
 
 class ResumePatchPayload(BaseModel):
-    resume: dict[str, Any]
+    resume: JobResume
 
 
 class JobPatchPayload(BaseModel):
@@ -45,10 +49,11 @@ class JobPatchPayload(BaseModel):
 @router.get("")
 def list_jobs(
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     postings = db.query(Posting).filter(Posting.user_id == user_uuid).all()
+    # print([_to_response(p) for p in postings])
     return [_to_response(p) for p in postings]
 
 
@@ -56,7 +61,7 @@ def list_jobs(
 def get_job(
     job_id: UUID,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     posting = (
@@ -73,7 +78,7 @@ def get_job(
 def scrape_job(
     payload: dict[str, Any],
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     p = Producer({"bootstrap.servers": "localhost:9094"})
 
@@ -93,12 +98,12 @@ def scrape_job(
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_job(
-    payload: dict[str, Any],
+    payload: PostingData,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
-    posting = Posting(user_id=user_uuid, data=payload)
+    posting = Posting(user_id=user_uuid, data=payload.to_db())
     db.add(posting)
     db.commit()
     db.refresh(posting)
@@ -110,7 +115,7 @@ def update_job_resume(
     job_id: UUID,
     payload: ResumePatchPayload,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     posting = (
@@ -121,11 +126,11 @@ def update_job_resume(
     if not posting:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    data = dict(posting.data or {})
-    data["resume"] = payload.resume
-    data["title"] = payload.resume.get("targetPosition") or payload.resume.get("position") or data.get("title", "")
-    data["company"] = payload.resume.get("targetCompany") or data.get("company", "")
-    posting.data = data
+    data = PostingData.from_db(posting.data)
+    data.resume = payload.resume
+    data.title = payload.resume.targetPosition or payload.resume.position or data.title
+    data.company = payload.resume.targetCompany or data.company
+    posting.data = data.to_db()
     db.commit()
     db.refresh(posting)
     return _to_response(posting)
@@ -136,7 +141,7 @@ def patch_job(
     job_id: UUID,
     payload: dict[str, Any],
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     posting = (
@@ -147,9 +152,9 @@ def patch_job(
     if not posting:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    data = dict(posting.data or {})
-    data.update(payload)
-    posting.data = data
+    data = PostingData.from_db(posting.data)
+    updated = data.model_copy(update=payload)
+    posting.data = updated.to_db()
     db.commit()
     db.refresh(posting)
     return _to_response(posting)
@@ -159,7 +164,7 @@ def patch_job(
 def delete_job(
     job_id: UUID,
     external_user_id: str = Depends(get_external_user_id),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
     posting = (
