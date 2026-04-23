@@ -43,9 +43,9 @@ Store your skills, languages, education, and work history once. This data is use
 
 ---
 
-## Running Locally
+## Running Locally (Tested only on Linux)
 
-**Prerequisites:** Docker Compose, Python 3.12, Deno, `uv`
+**Prerequisites:** Make, Docker Compose, Python 3.12, Deno, `uv`
 Project uses mise to manage this dependencies except for docker so you can run in root folder:
 ```
 mise trust
