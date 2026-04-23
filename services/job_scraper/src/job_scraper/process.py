@@ -115,7 +115,8 @@ def generate_summary(
     posting_text = json.dumps(posting_details.model_dump(mode="json"), indent=2)
 
     prompt = f"""
-                Summarize this job posting. Estimate job fit based on my personal summary.
+                Summarize this job posting. Estimate job fit based on my personal summary. Provide EXTREMELY HONEST matching score based on matching stack and level of seniority
+                Keep response short and consise
 
                 Job posting:
                 {posting_text}
@@ -130,7 +131,7 @@ def generate_summary(
                 - what should be included in the resume for this particular position
                 - what is not worth including in the resume for this particular position
                 
-                Do not give generic resume advise
+                DO NOT give generic resume advise
                 """
 
     return get_better_llm().invoke(prompt).content

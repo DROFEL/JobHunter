@@ -1,11 +1,5 @@
 import { useState } from "react"
-
-function formatDateDisplay(value: string) {
-  if (!value) return value
-  const d = new Date(value)
-  return isNaN(d.getTime()) ? value : d.toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
-}
-import { Building2, CalendarClock, Link as LinkIcon, MapPin } from "lucide-react"
+import { Building2, Link as LinkIcon, MapPin } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 
 import { JOB_STATUSES } from "@/components/resume-workbench/types.ts"
@@ -20,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx"
-import { getHostname } from "@/utils/resume-form-helpers.ts"
 import { useFetchPosting } from "../../../api/hooks/useAI.ts"
 import { useSavedJobs } from "../../../api/hooks/useSavedJobs.ts"
 
@@ -41,14 +34,6 @@ export function ResumeHeaderSection() {
   function handleFetchJobPosting() {
     setClickedAt(Date.now())
     fetchPosting.mutate({ url: data.jobPostingLink, posting_id: selectedJobId })
-    const role = data.targetPosition || data.position || "Product-focused frontend role"
-    const company = data.targetCompany || "the target company"
-    const source = data.jobPostingLink ? getHostname(data.jobPostingLink) : "job board"
-
-    updateField(
-      "aiJobSummary",
-      `${role} at ${company} emphasizes polished user experiences, collaborative product delivery, and measurable impact. Source saved from ${source}.`,
-    )
   }
 
   return (
@@ -140,15 +125,12 @@ export function ResumeHeaderSection() {
 
               <div className="w-36 space-y-2">
                 <label className="text-sm font-medium text-foreground">Deadline</label>
-                <div className="relative">
-                  <CalendarClock className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={formatDateDisplay(jobMeta.deadline)}
-                    onChange={(e) => onJobMetaChange({ deadline: e.target.value })}
-                    placeholder="Apr 30, 2026"
-                    className="h-9 pl-7 text-xs"
-                  />
-                </div>
+                <Input
+                  type="date"
+                  value={jobMeta.deadline ? new Date(jobMeta.deadline).toISOString().slice(0, 10) : ""}
+                  onChange={(e) => onJobMetaChange({ deadline: e.target.value })}
+                  className="h-9 text-xs"
+                />
               </div>
             </div>
           )}

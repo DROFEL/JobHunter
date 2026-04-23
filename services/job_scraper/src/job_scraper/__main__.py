@@ -1,3 +1,4 @@
-from job_scraper.main import main
+import asyncio
+from job_scraper.main import async_main
 
-main()
+asyncio.run(async_main())

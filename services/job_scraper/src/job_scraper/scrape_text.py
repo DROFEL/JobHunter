@@ -1,7 +1,9 @@
 import re
-import asyncio
+import logging
 from bs4 import BeautifulSoup, Comment
 from crawlee.crawlers import PlaywrightCrawler
+from crawlee.storage_clients import MemoryStorageClient
+from common.logging_config import setup_logging
 
 
 def clean_html_for_llm(html: str) -> str:
@@ -66,7 +68,7 @@ def clean_html_for_llm(html: str) -> str:
 async def fetch_and_clean(url: str) -> str:
     result = {"html": ""}
 
-    crawler = PlaywrightCrawler()
+    crawler = PlaywrightCrawler(storage_client=MemoryStorageClient())
 
     @crawler.router.default_handler
     async def handler(context):
@@ -76,14 +78,5 @@ async def fetch_and_clean(url: str) -> str:
         result["html"] = clean_html_for_llm(raw_html)
 
     await crawler.run([url])
+    setup_logging()
     return result["html"]
-
-
-if __name__ == "__main__":
-    url = "https://www.linkedin.com/jobs/view/4404360495/"
-    cleaned_html = asyncio.run(fetch_and_clean(url))
-
-    with open("cleaned.html", "w", encoding="utf-8") as f:
-        f.write(cleaned_html)
-
-    print(cleaned_html[:2000])

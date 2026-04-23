@@ -7,7 +7,7 @@ from common.minio import client
 from job_scraper.scrape_text import fetch_and_clean
 from job_scraper.process import extract_posting_details, search_company_details, generate_summary
 
-def process_scrape_request(url: str, posting_id: str):
+async def process_scrape_request(url: str, posting_id: str):
     logger = get_logger(__name__)
     with get_db() as db:
         posting = db.query(Posting).filter(Posting.posting_id == posting_id).first()
@@ -19,8 +19,12 @@ def process_scrape_request(url: str, posting_id: str):
         db.commit()
 
         try:
-            text = asyncio.run(fetch_and_clean(url))
-            setup_logging()
+            text = await fetch_and_clean(url)
+            if not text:
+                logger.info(f"Scraping failed and retunred empty result. Terminating job")
+                posting.scrapeStatus = "Failed"
+                db.commit()
+                return
             logger.info(f"Finished fetching")
             posting_details = extract_posting_details(text)
             logger.info(f"Finished extraction")
