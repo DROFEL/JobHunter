@@ -38,7 +38,7 @@ Store your skills, languages, education, and work history once. This data is use
 - [x] Single-page job scraping — crawl a posting URL, extract structured data, generate a summary with LLM
 - [ ] AI assistant in the resume workbench — inline suggestions for summary and experience bullets, skills
 - [ ] Bulk job board scraping — auto-discover and import new postings on a schedule, with a UI for configuring scrape targets and settings
-- [ ] Auto-apply — fill and submit applications automatically using browser automation + LLM
+- [ ] Auto-apply — fill and submit applications automatically using browser automation + LLM HITL
 - [ ] Gmail monitoring — track application progress by reading incoming OTP codes and status update emails
 
 ---
