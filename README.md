@@ -10,7 +10,7 @@ A full-stack job search automation platform — scrape job postings, tailor resu
 
 | Resume Workbench | Profile Settings |
 |---|---|
-| ![Resume Workbench](docs/screenshots/Jobhunt_architecture.png) | ![Settings](docs/screenshots/settings.png) |
+| ![Resume Workbench]() | ![Settings](docs/screenshots/settings.png) |
 
 ---
 
