@@ -14,41 +14,9 @@ A full-stack job search automation platform — scrape job postings, tailor resu
 
 ---
 
-## Architecture
+## High Level Architecture View
 
-> _Add architecture diagram here_
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                              │
-│     React 19 + TanStack Router/Query + OTel JS SDK          │
-└────────────┬──────────────────────────┬─────────────────────┘
-             │ REST (JSON)              │ OTLP/HTTP traces
-┌────────────▼──────────────┐  ┌────────▼────────────────────┐
-│     WebAPI (FastAPI)      │  │      OTel Collector          │
-│  /users /jobs /ai ...     │  │  OTLP gRPC :4317             │
-│  OTLP → Collector         ├──►  OTLP HTTP :4318             │
-└──────┬────────────────────┘  └──┬──────────┬───────────────┘
-       │ SQLAlchemy ORM           │ traces   │ metrics
-┌──────▼──────────┐        ┌──────▼──────┐ ┌▼────────────────┐
-│  PostgreSQL 17  │        │   Jaeger    │ │   Prometheus     │
-└─────────────────┘        │  UI :16686  │ │   + Grafana      │
-                           └─────────────┘ └─────────────────-┘
-┌─────────────────────────────────────────────────────────────┐
-│                  Apache Kafka 4.1  topic: jobs              │
-└────────────┬─────────────────────────────┬──────────────────┘
-             │ consume                      │ consume
-    ┌────────▼──────┐               ┌───────▼─────────────┐
-    │  Job Scraper  │               │   Job Applier (WIP) │
-    │  Playwright   │               │   browser-use       │
-    │  LangChain +  │               └─────────────────────┘
-    │  OpenRouter   │
-    └───────┬───────┘
-┌───────────▼─────────────┐    ┌──────────────────────┐
-│  MinIO (S3-compatible)  │    │  Elasticsearch        │
-│  Raw HTML / JSON        │    │  OTel logs :9200      │
-└─────────────────────────┘    └──────────────────────┘
-```
+![High Level Architecture View](docs/screenshots/Jobhunt_architecture.png)
 
 ---
 
