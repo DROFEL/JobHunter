@@ -1,12 +1,10 @@
 # JobHunter (WIP)
 
-A full-stack job search automation platform — scrape job postings, tailor resumes with AI assistance, track applications, and (soon) auto-apply. Built as a personal tool and a demonstration of event-driven, service-oriented backend architecture.
+A personal job search automation platform. Scrape job postings, tailor your resume with AI, track applications, and (soon) auto-apply — all from one place.
 
 ---
 
 ## Screenshots
-
-> _Add screenshots here_
 
 | Resume Workbench | Profile Settings |
 |---|---|
@@ -14,161 +12,89 @@ A full-stack job search automation platform — scrape job postings, tailor resu
 
 ---
 
-## High Level Architecture View
-
-![High Level Architecture View](docs/screenshots/Jobhunt_architecture.png)
-
----
-
 ## What It Does
 
-### Resume Builder
-A three-panel workbench: job selector sidebar, structured form editor, and live PDF preview. Users maintain multiple resume versions, switch templates, and export to PDF. Sections cover contact info, summary, work experience, projects, skills, and languages.
+### Resume Workbench
+A three-panel editor: job selector sidebar, structured form, and live PDF preview. Maintain multiple resume versions, switch templates, and export to PDF. Covers contact info, summary, work experience, projects, skills, and languages.
 
-### AI Assistance
-REST endpoint (`POST /ai/generate`) accepts a `call_type` (`job_summary`, `resume_summary`, `work_experience`), a user prompt, and optional context. Drives LLM calls (LangChain + OpenRouter) to generate tailored resume content and summarize job postings against the user's profile. The interface is fully wired; LLM integration is the active development surface.
+### Job Scraping
+Paste a job posting URL and the scraper extracts structured job data automatically — title, company, requirements, and description — and saves it to your job list. Runs as a background worker so scraping doesn't block the UI. Job board scraping comeing soon...
 
-### Job Scraping Pipeline
-The scraper service consumes messages from a Kafka topic, launches a headless Firefox browser via Crawlee + Playwright, extracts structured job data using an LLM with JSON schema validation (LangChain + GPT-4 mini via OpenRouter), and persists raw and structured output to MinIO. Consumer group offset management ensures at-least-once delivery.
+### AI Resume Tailoring (in progress)
+Generate tailored resume content — summaries, work experience bullets, and job post summaries — using AI. The AI is context-aware: it pulls from your saved profile and the selected job posting to produce relevant output.
 
-### Job Application Automation
-The applier service consumes the same Kafka topic (separate consumer group) and will use `browser-use` to fill and submit job applications automatically. Currently scaffolded; browser automation logic is in development.
+### Job Application Automation (DBT)
+A companion worker that will auto-fill and submit job applications using browser automation. Currently scaffolded; the automation logic is in active development.
 
-### Job & Application Tracking
-Full CRUD for saved jobs with scrape status tracking, external job board ID references, and per-job resume associations stored in PostgreSQL.
+### Job Tracking
+Save jobs, track their scrape status, and associate a tailored resume with each one. Full create/edit/delete support.
 
 ### Profile Settings
-Persistent profile data (skills pool, languages + proficiency, education, work history) stored as flexible JSON in PostgreSQL and used as context for AI generation and resume pre-population.
+Store your skills, languages, education, and work history once. This data is used as context for AI generation and pre-populates new resumes.
 
----
+## Roadmap
 
-## Tech Stack
-
-### Backend
-| Layer | Technology |
-|---|---|
-| API framework | FastAPI (Python 3.12) |
-| ORM | SQLAlchemy + Alembic migrations |
-| Database | PostgreSQL 17 |
-| Message queue | Apache Kafka 4.1 (KRaft mode, no ZooKeeper) |
-| Object storage | MinIO (S3-compatible) |
-| Web scraping | Crawlee + Playwright (headless Firefox) |
-| LLM orchestration | LangChain + OpenRouter |
-| Browser automation | browser-use |
-| Observability | OTel Collector → Jaeger (traces) + Prometheus (metrics) + Elasticsearch (logs) |
-| Dashboards | Grafana (auto-provisioned datasources) |
-| Package management | uv (workspace with shared `db` and `common` packages) |
-
-### Frontend
-| Layer | Technology |
-|---|---|
-| Framework | React 19 + TypeScript |
-| Routing | TanStack Router (file-based) |
-| Server state | TanStack React Query |
-| Styling | Tailwind CSS 4 + Radix UI |
-| Forms | React Hook Form + Zod |
-| Build | Vite |
-| PDF export | html2pdf.js + @react-pdf/renderer |
-| API mocking | MSW (Mock Service Worker) |
-
----
-
-## Service Layout
-
-```
-/
-├── compose.yml                  # PostgreSQL, Kafka, MinIO, Jaeger, OTel Collector, Elasticsearch, Grafana
-├── otel-collector-config.yml    # OTel Collector pipeline config
-├── prometheus.yml               # Prometheus scrape targets
-├── grafana/provisioning/        # Auto-provisioned Grafana datasources
-├── frontend/                    # React app (Vite)
-├── services/
-│   ├── webapi/                  # FastAPI REST API
-│   ├── job_scraper/             # Kafka consumer + Playwright crawler
-│   └── job_applier/             # Browser automation worker (WIP)
-└── packages/
-    ├── db/                      # Shared SQLAlchemy models & session
-    └── common/                  # Shared utilities
-```
-
----
-
-## Data Flow
-
-1. A scrape request is published to the `jobs` Kafka topic.
-2. **Job Scraper** picks it up, crawls the target URL with Playwright, extracts structured data via LangChain/LLM, and stores results in MinIO + PostgreSQL.
-3. **Job Applier** (same topic, separate consumer group) will auto-fill the application using browser automation.
-4. The user opens the **Resume Workbench**, selects a saved job, edits their resume, and uses **AI generation** to tailor the summary and experience to the specific posting.
-5. The finalized resume is exported as PDF.
-
----
-
-## Reliability Design
-
-- **Kafka with 3 partitions** — horizontal scalability for worker processes and fault-tolerant message delivery.
-- **Consumer group offset management** — workers resume from their last committed offset after restart; no jobs are lost or double-processed.
-- **MinIO for artifact storage** — raw crawl results and extracted JSON are persisted independently of the database, providing a replay source and audit trail.
-- **Alembic migrations** — schema changes are versioned and repeatable across environments.
-- **Health endpoint** (`GET /health`) on the API for container liveness checks.
-- **OTel Collector as single ingestion point** — frontend (OTLP/HTTP) and backend services (OTLP/gRPC) both send telemetry to the collector, which fans out to the right backend per signal type: traces → Jaeger, metrics → Prometheus, logs → Elasticsearch.
-- **Distributed tracing** — frontend spans (fetch, document load, user interactions) are correlated with backend spans via propagated trace context headers.
-- **Grafana** — auto-provisioned with Prometheus, Jaeger, and Elasticsearch datasources; no manual setup required after `docker compose up`.
-- **Prometheus metrics** — 15-day TSDB retention; scrapes both the WebAPI and the OTel Collector's Prometheus exporter endpoint.
-- **KRaft-mode Kafka** — no ZooKeeper dependency; simpler ops that mirrors a real production topology.
+- [x] Resume workbench — build a tailored resume from profile + position data, export as PDF
+- [x] Single-page job scraping — crawl a posting URL, extract structured data, generate a summary with LLM
+- [ ] AI assistant in the resume workbench — inline suggestions for summary and experience bullets, skills
+- [ ] Bulk job board scraping — auto-discover and import new postings on a schedule, with a UI for configuring scrape targets and settings
+- [ ] Auto-apply — fill and submit applications automatically using browser automation + LLM
+- [ ] Gmail monitoring — track application progress by reading incoming OTP codes and status update emails
 
 ---
 
 ## Running Locally
 
-**Prerequisites:** Docker, Python 3.12+, Node.js 20+, `uv`
-
-```bash
-# Start infrastructure
-docker compose up -d
-
-# Install Python dependencies (uv workspace)
-uv sync
-
-# Run migrations
-cd services/webapi && alembic upgrade head
-
-# Start API
-make api
-
-# Start frontend
-cd frontend && npm install && npm run dev
-
-# Start scraper worker
-make scraper
+**Prerequisites:** Docker Compose, Python 3.12, Deno, `uv`
+Project uses mise to manage this dependencies except for docker so you can run in root folder:
+```
+mise trust
+mise install
 ```
 
+**Environment setup (once per machine):**
+
+The scraper requires an OpenRouter API key. Create `services/job_scraper/.env`:
+
+```bash
+echo "OPEN_ROUTER_SK=sk-or-v1-your-key" >> services/job_scraper/.env
+```
+
+```bash
+# Setup: start infrastructure, install dependencies, apply configurations
+# NEEDS TO BE RUN ONLY ONE PER ENVIRONMENT
+make setup
+
+# Start the API
+make start
+
+#Then go to http://localhost:5173
+
+```
+
+> To run the frontend with mocked API responses (no backend required):
+> ```bash
+> cd frontend && deno task mock
+> ```
+
+
 ---
 
-## Roadmap
+## High Level Architecture
 
-- [x] Resume builder with live preview and PDF export
-- [x] Profile settings (skills, languages, education)
-- [x] Job management (CRUD, scrape status tracking)
-- [x] Kafka-based scraper pipeline with LLM extraction
-- [x] AI generation API (endpoint + typed schema)
-- [ ] LLM integration for resume tailoring (OpenRouter)
-- [ ] Job search UI
-- [ ] Dashboard (application pipeline view)
-- [ ] Job applier browser automation
-- [ ] Auth (replace header-based user ID with real sessions)
+![High Level Architecture View](docs/screenshots/Jobhunt_architecture.png)
+
+The system is split into three backend services that communicate through a central message queue:
+
+- **Frontend** — React app. Users build resumes, manage jobs, and trigger scrapes. Pushes generated CV PDFs to object storage and pulls back assets like company logos.
+- **WebAPI** — REST API. Handles all user-facing operations and publishes scraping/application jobs onto the Kafka queue.
+- **Scraper service** — Kafka consumer. Picks up scrape jobs, crawls the target page with a headless browser, extracts structured data via LLM, and saves results to PostgreSQL. Raw HTML pages are archived in MinIO (S3-compatible storage).
+- **Applier service** — Kafka consumer (different topic). Will pull the tailored CV PDF from MinIO and auto-fill job applications using browser automation. Currently in development.
+
+### Why Kafka
+
+This project is partly a learning exercise, designed as if it would run in production for many users. Scraping, LLM extraction, and auto-applying are slow, resource-heavy, and fully asynchronous — so they live in dedicated worker services rather than inside the API. The frontend submits a job and moves on; Kafka holds it in the queue until a worker picks it up. Consumer groups guarantee that only one worker instance processes each job, which means scaling is trivial: if a worker runs out of resources, spinning up a second instance immediately adds capacity with no code or config changes. Resource distribution stays practical and predictable.
+
+All services emit telemetry to an **OTel Collector**, which fans it out to Jaeger (traces), Prometheus (metrics), and Elasticsearch (logs). Grafana sits on top as the unified dashboard. Gmail integration is planned for monitoring application email responses and otp codes and registration emails for auto-applier.
 
 ---
-
-## Key Engineering Decisions
-
-**Kafka over direct HTTP between services** — decouples scraper and applier lifecycle from the API. Workers can be scaled, restarted, or swapped without touching the API layer, and messages survive worker downtime.
-
-**KRaft-mode Kafka (no ZooKeeper)** — reduces infrastructure surface area for a single-node dev environment while keeping the topology consistent with production.
-
-**uv workspace** — shared `db` and `common` packages are referenced as local path dependencies across all three Python services, avoiding code duplication while keeping services independently deployable.
-
-**Flexible JSON columns in PostgreSQL** — user profile data and resume content use structured JSON fields, allowing schema evolution for user-facing data without Alembic migrations on every change.
-
-**LangChain + OpenRouter** — model-agnostic LLM routing lets the scraper and AI generation service swap underlying models (GPT-4 mini today, others tomorrow) without code changes.
-
-**MSW for frontend development** — API responses are mocked at the network layer during development, allowing the frontend to be built and tested without a running backend.

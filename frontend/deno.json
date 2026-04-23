@@ -1,7 +1,7 @@
 {
   "nodeModulesDir": "auto",
   "tasks": {
-    "mock": "npm run dev -- --mode mock",
+    "mock": "VITE_ENABLE_MOCKS=true npm run dev",
     "dev": "npm run dev",
     "build": "npm run build",
     "check": "npm run check",

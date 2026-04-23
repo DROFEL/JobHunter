@@ -1,5 +1,6 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Header, HTTPException
-from db import Base, engine, get_fastapi_db
+from db import get_fastapi_db
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from webapi.routes.user import router as users_router
@@ -8,9 +9,22 @@ from webapi.routes.resumeTemplates import router as resumeTemplates_router
 from webapi.routes.jobs import router as jobs_router
 from webapi.routes.ai import router as ai_router
 from typing import Annotated
+from alembic.config import Config
+from alembic import command
 
-Base.metadata.create_all(bind=engine)
-app = FastAPI(title="JobHunter API")
+
+def run_migrations() -> None:
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    run_migrations()
+    yield
+
+
+app = FastAPI(title="JobHunter API", lifespan=lifespan)
 
 def get_external_user_id(
     Authentication: Annotated[str | None, Header()] = None,

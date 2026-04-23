@@ -1,9 +1,23 @@
-.PHONY: api scraper applier sync generate_migration apply_migration
+.PHONY: setup start frontend api scraper applier sync generate_migration apply_migration
 
 MSG ?= update schema
 
+setup:
+	docker compose -f compose.yml up -d
+	cd frontend && deno install
+	$(MAKE) sync
+
 sync:
 	uv sync --all-packages
+
+start:
+	$(MAKE) frontend & \
+	$(MAKE) api & \
+	$(MAKE) scraper & \
+	wait
+
+frontend:
+	cd frontend && deno run dev
 
 api:
 	uv run --package webapi uvicorn webapi.main:app --reload
