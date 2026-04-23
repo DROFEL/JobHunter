@@ -6,6 +6,7 @@ setup:
 	docker compose -f compose.yml up -d
 	cd frontend && deno install
 	$(MAKE) sync
+	bash service_configs/bootstrap/bootstrap.sh
 
 sync:
 	uv sync --all-packages
@@ -29,7 +30,7 @@ apply_migration:
 	uv run --package webapi alembic upgrade head
 
 scraper:
-	uv run --package job_scraper python -m job_scraper
+	uv run --package job_scraper watchfiles "python -m job_scraper" services/job_scraper
 
 applier:
-	uv run --package job_applier python -m job_applier
+	uv run --package job_applier watchfiles "python -m job_applier" services/job_applier

@@ -14,7 +14,7 @@ async def async_main():
         "group.id": "worker-group",
         "auto.offset.reset": "earliest",
     })
-    c.subscribe(["scrape_jobs"])
+    c.subscribe(["postings.scrape"])
 
     loop = asyncio.get_event_loop()
 
