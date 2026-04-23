@@ -6,7 +6,6 @@ from crawlee import Request
 from crawlee.crawlers import PlaywrightCrawler
 
 from job_scraper.scrapers.base_scraper import BaseScraper
-from job_scraper.scrapers.html_cache import load_html, save_html
 from job_scraper.scrapers.models import FetchedPage
 
 _BASE_URL = "https://www.linkedin.com"
@@ -18,10 +17,6 @@ class LinkedInScraper(BaseScraper):
 
     async def scrape_job_page(self, url: str) -> Optional[FetchedPage]:
         """Fetch a single LinkedIn job page unauthenticated."""
-        cached = load_html(url)
-        if cached:
-            return FetchedPage(url=url, html=cached)
-
         result: dict = {"page": None}
         crawler = self._make_crawler(headless=True)
 
@@ -30,9 +25,7 @@ class LinkedInScraper(BaseScraper):
             if any(kw in context.page.url for kw in ("signup", "authwall")):
                 return
             await context.page.wait_for_load_state("domcontentloaded")
-            html = await context.page.content()
-            save_html(url, html)
-            result["page"] = FetchedPage(url=url, html=html)
+            result["page"] = FetchedPage(url=url, html=await context.page.content())
 
         await crawler.run([url])
         return result["page"]
@@ -69,8 +62,6 @@ class LinkedInScraper(BaseScraper):
         async def search_handler(context) -> None:
             await context.page.wait_for_load_state("domcontentloaded")
             html = await context.page.content()
-            save_html(context.request.url, html)
-
             soup = BeautifulSoup(html, "html.parser")
             job_cards = soup.find_all("div", class_="base-search-card")
             if not job_cards:
@@ -117,12 +108,8 @@ class LinkedInScraper(BaseScraper):
                 return
             if len(pages) >= results_wanted:
                 return
-            cached = load_html(context.request.url)
-            if cached is None:
-                await context.page.wait_for_load_state("domcontentloaded")
-                cached = await context.page.content()
-                save_html(context.request.url, cached)
-            pages.append(FetchedPage(url=context.request.url, html=cached))
+            await context.page.wait_for_load_state("domcontentloaded")
+            pages.append(FetchedPage(url=context.request.url, html=await context.page.content()))
 
         await crawler.run([Request.from_url(_guest_api_url(0), label="SEARCH")])
         return pages[:results_wanted]

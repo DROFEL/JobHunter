@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from job_scraper.scrapers.html_cache import load_html, save_html
 from job_scraper.scrapers.linkedin_scraper import LinkedInScraper
 from job_scraper.scrapers.models import FetchedPage
 from job_scraper.scrapers.session_store import load_session, save_session
@@ -48,10 +47,6 @@ class LinkedInAuthenticatedScraper(LinkedInScraper):
         return result["url"]
 
     async def _scrape_single_page(self, crawler, url: str) -> list[FetchedPage]:
-        cached = load_html(url)
-        if cached:
-            return [FetchedPage(url=url, html=cached)]
-
         result: list[FetchedPage] = []
 
         @crawler.router.default_handler
@@ -59,9 +54,7 @@ class LinkedInAuthenticatedScraper(LinkedInScraper):
             if any(kw in context.page.url for kw in ("signup", "authwall", "login")):
                 return
             await context.page.wait_for_load_state("domcontentloaded")
-            html = await context.page.content()
-            save_html(url, html)
-            result.append(FetchedPage(url=url, html=html))
+            result.append(FetchedPage(url=url, html=await context.page.content()))
 
         await crawler.run([url])
         return result

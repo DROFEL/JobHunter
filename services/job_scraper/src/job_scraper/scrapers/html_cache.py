@@ -1,5 +1,5 @@
 import io
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode
 
 from common.minio import client as minio_client
 
@@ -8,7 +8,17 @@ _BUCKET = "posting-artifacts"
 
 def _key(url: str) -> str:
     p = urlparse(url)
-    return f"{p.netloc}{p.path}".strip("/")
+
+    params = parse_qs(p.query)
+    kept = {}
+
+    if "currentJobId" in params:
+        kept["currentJobId"] = params["currentJobId"][0]
+
+    query = urlencode(kept)
+
+    base = f"{p.netloc}{p.path}".strip("/")
+    return f"{base}?{query}" if query else base
 
 
 def load_html(url: str) -> str | None:

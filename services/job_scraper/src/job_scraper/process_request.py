@@ -4,7 +4,7 @@ from db.models import Posting, Company, User
 from common.logging_config import setup_logging, get_logger
 from common.models import PostingData
 from common.minio import client
-from job_scraper.scrape_text import fetch_and_clean
+from job_scraper.fetcher import fetch_page
 from job_scraper.process import extract_posting_details, search_company_details, generate_summary
 
 async def process_scrape_request(url: str, posting_id: str):
@@ -19,14 +19,31 @@ async def process_scrape_request(url: str, posting_id: str):
         db.commit()
 
         try:
-            text = await fetch_and_clean(url)
-            if not text:
-                logger.info(f"Scraping failed and retunred empty result. Terminating job")
+            fetch_result = await fetch_page(url)
+            if not fetch_result.llm_text:
+                logger.info(f"Scraping failed and returned empty result. Terminating job")
                 posting.scrapeStatus = "Failed"
                 db.commit()
                 return
             logger.info(f"Finished fetching")
-            posting_details = extract_posting_details(text)
+            posting_details = extract_posting_details(fetch_result.llm_text)
+            if fetch_result.pre_extracted:
+                from datetime import datetime
+                pre = fetch_result.pre_extracted
+                overrides = {}
+                if pre.title and pre.title != "N/A":
+                    overrides["position_name"] = pre.title
+                if pre.company and pre.company != "N/A":
+                    overrides["company_name"] = pre.company
+                if pre.location:
+                    overrides["location"] = pre.location
+                if pre.salary:
+                    overrides["salary"] = pre.salary
+                if pre.job_type:
+                    overrides["employmentType"] = pre.job_type
+                if pre.date_posted:
+                    overrides["posting_date"] = datetime(pre.date_posted.year, pre.date_posted.month, pre.date_posted.day)
+                posting_details = posting_details.model_copy(update=overrides)
             logger.info(f"Finished extraction")
             
             company = db.query(Company).filter(Company.name == posting_details.company_name).first()
