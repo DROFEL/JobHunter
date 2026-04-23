@@ -16,6 +16,7 @@ dependencies = [
   "crawlee",
   "crawlee[playwright]",
   "beautifulsoup4",
+  "requests",
   "asyncio",
   "db",
   "common",

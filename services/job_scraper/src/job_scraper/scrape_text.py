@@ -1,8 +1,11 @@
+import json
+import os
 import re
-import logging
+
 from bs4 import BeautifulSoup, Comment
 from crawlee.crawlers import PlaywrightCrawler
 from crawlee.storage_clients import MemoryStorageClient
+
 from common.logging_config import setup_logging
 
 
@@ -66,6 +69,17 @@ def clean_html_for_llm(html: str) -> str:
 
 
 async def fetch_and_clean(url: str) -> str:
+    from urllib.parse import urlparse
+    domain = urlparse(url).netloc.lower().removeprefix("www.")
+
+    match domain:
+        case "linkedin.com":
+            return await _fetch_linkedin(url)
+        case _:
+            return await _fetch_generic(url)
+
+
+async def _fetch_generic(url: str) -> str:
     result = {"html": ""}
 
     crawler = PlaywrightCrawler(storage_client=MemoryStorageClient())
@@ -74,9 +88,38 @@ async def fetch_and_clean(url: str) -> str:
     async def handler(context):
         page = context.page
         await page.wait_for_load_state("networkidle")
-        raw_html = await page.content()
-        result["html"] = clean_html_for_llm(raw_html)
+        result["html"] = await page.content()
 
     await crawler.run([url])
     setup_logging()
     return result["html"]
+
+
+async def _fetch_linkedin(url: str) -> str:
+    from job_scraper.scrapers.linkedin_authenticated_scraper import LinkedInAuthenticatedScraper
+    from job_scraper.extractors.linkedin_extractor import extract
+    from job_scraper.scrapers.linkedin_scraper import LinkedInScraper
+
+    proxy = os.environ.get("LINKEDIN_PROXY", "")
+    username = os.environ.get("LINKEDIN_USERNAME", "")
+    password = os.environ.get("LINKEDIN_PASSWORD", "")
+
+    # Phase 1: unauthenticated fetch
+    page = await LinkedInScraper(proxy=proxy).scrape_job_page(url)
+    if page is None:
+        return ""
+
+    jobs = extract(page)
+    if not jobs:
+        return ""
+    job = jobs[0]
+
+    if not job.external_application:
+        return json.dumps(job.model_dump(mode="json"), indent=2)
+
+    # Phase 2: offsite — authenticated click to capture the redirect URL
+    if not all((proxy, username, password)):
+        return json.dumps(job.model_dump(mode="json"), indent=2)
+
+    apply_url = await LinkedInAuthenticatedScraper(proxy, username, password).get_apply_url(url)
+    return apply_url or json.dumps(job.model_dump(mode="json"), indent=2)

@@ -1066,6 +1066,7 @@ dependencies = [
     { name = "db" },
     { name = "langchain" },
     { name = "langchain-openrouter" },
+    { name = "requests" },
     { name = "tenacity" },
 ]
 
@@ -1081,6 +1082,7 @@ requires-dist = [
     { name = "db", editable = "packages/db" },
     { name = "langchain" },
     { name = "langchain-openrouter" },
+    { name = "requests" },
     { name = "tenacity" },
 ]
 
