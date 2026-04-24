@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Text, text
+from sqlalchemy import ForeignKey, Index, Integer, Text, text
 from sqlalchemy.dialects.postgresql import JSON, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,5 +36,16 @@ class Posting(Base):
     data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str | None] = mapped_column(Text, nullable=True)
     scrapeStatus: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attempt: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
     company: Mapped["Company | None"] = relationship(back_populates="postings")
+
+    __table_args__ = (
+        Index(
+            "ux_postings_user_board",
+            "user_id",
+            "board_id",
+            unique=True,
+            postgresql_where=text("board_id IS NOT NULL"),
+        ),
+    )

@@ -5,15 +5,37 @@ from common.minio import client as minio_client
 
 _BUCKET = "posting-artifacts"
 
+# Per-domain whitelist: only these query params are kept when the URL matches the domain.
+# Everything else (tracking, session, etc.) is stripped so the same posting maps to one cache key.
+_ALLOWED_QUERY_PARAMS: dict[str, set[str]] = {
+    "linkedin.com": {"currentJobId"},
+}
+
+# Cross-domain identifiers: if any of these params are present, they uniquely identify the posting
+# regardless of host (e.g. Ashby-hosted boards embedded on many company sites).
+_IDENTIFYING_QUERY_PARAMS: set[str] = {"ashby_jid"}
+
 
 def _key(url: str) -> str:
     p = urlparse(url)
 
-    params = parse_qs(p.query)
-    kept = {}
+    # Normalize host so `www.linkedin.com`, `linkedin.com`, and subdomains all hit the same rule.
+    host = p.netloc.lower().removeprefix("www.")
+    allowed = next(
+        (params for domain, params in _ALLOWED_QUERY_PARAMS.items() if host == domain or host.endswith("." + domain)),
+        None,
+    )
 
-    if "currentJobId" in params:
-        kept["currentJobId"] = params["currentJobId"][0]
+    params = parse_qs(p.query)
+    identifying = _IDENTIFYING_QUERY_PARAMS & params.keys()
+    if identifying:
+        # Identifier wins: strip everything else, including any domain-allowed params.
+        kept = {k: params[k][0] for k in identifying}
+    elif allowed is None:
+        # Unknown host: keep all params as-is to avoid collapsing distinct pages into one key.
+        kept = {k: v[0] for k, v in params.items()}
+    else:
+        kept = {k: params[k][0] for k in allowed if k in params}
 
     query = urlencode(kept)
 
