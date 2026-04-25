@@ -55,6 +55,8 @@ export function ResumeWorkbenchPage() {
   const [editingMeta, setEditingMeta] = useState<{ status?: JobStatus; employmentType?: string; salary?: string; location?: string; deadline?: string }>({})
   const [isDesktop, setIsDesktop] = useState(false)
 
+  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? jobs[0]
+
   // Seed selection once when jobs first arrive
   const initialized = useRef(false)
   useEffect(() => {
@@ -64,6 +66,18 @@ export function ResumeWorkbenchPage() {
       setEditingResume(seedResumeFromJob(jobs[0]))
     }
   }, [jobs])
+
+  // Re-seed resume when scraping completes so title/summary reflect fetched data
+  const prevScrapeStatusRef = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (!selectedJob) return
+    const prev = prevScrapeStatusRef.current
+    prevScrapeStatusRef.current = selectedJob.scrapeStatus
+    if (prev !== undefined && prev !== "Complete" && selectedJob.scrapeStatus === "Complete") {
+      setEditingResume(seedResumeFromJob(selectedJob))
+      setEditingMeta({})
+    }
+  }, [selectedJob])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`)
@@ -75,8 +89,6 @@ export function ResumeWorkbenchPage() {
 
     return () => mediaQuery.removeEventListener("change", updateLayout)
   }, [])
-
-  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? jobs[0]
   const hasJobs = jobs.length > 0
 
   const sidebarJobs = useMemo(

@@ -1,12 +1,12 @@
+import logging
 import os
-import re
 from dataclasses import dataclass, field
 
-from bs4 import BeautifulSoup, Comment
 from crawlee.crawlers import PlaywrightCrawler
 from crawlee.storage_clients import MemoryStorageClient
 
 from common.logging_config import setup_logging
+from job_scraper.extractors.generic_extractor import extract_text
 from job_scraper.scrapers.models import FetchedPage, ScrapedJob
 
 
@@ -14,56 +14,6 @@ from job_scraper.scrapers.models import FetchedPage, ScrapedJob
 class FetchResult:
     llm_text: str
     pre_extracted: ScrapedJob | None = field(default=None)
-
-
-def clean_html_for_llm(html: str) -> str:
-    soup = BeautifulSoup(html, "html.parser")
-
-    for tag in soup.find_all([
-        "script", "style", "noscript", "iframe", "svg", "canvas",
-        "code", "pre", "template"
-    ]):
-        tag.decompose()
-
-    for c in soup.find_all(string=lambda t: isinstance(t, Comment)):
-        c.extract()
-
-    for tag in list(soup.find_all(True)):
-        text = tag.get_text(" ", strip=True)
-        s = text.strip()
-        if (
-            (s.startswith("{") and '"data"' in s) or
-            (s.startswith("{") and '"entityUrn"' in s) or
-            (s.startswith("[") and s.endswith("]"))
-        ):
-            tag.decompose()
-
-    def should_keep_tag(tag) -> bool:
-        if tag.name == "a" and tag.get("href"):
-            return True
-        if tag.name in {"img", "source", "video", "audio"} and tag.get("src"):
-            return True
-        return False
-
-    for tag in soup.find_all(True):
-        if tag.name == "a" and tag.get("href"):
-            tag.attrs = {"href": tag.get("href")}
-        elif tag.name in {"img", "source", "video", "audio"} and tag.get("src"):
-            tag.attrs = {"src": tag.get("src")}
-        else:
-            tag.attrs = {}
-
-    for tag in list(soup.find_all(True)):
-        if should_keep_tag(tag):
-            continue
-        if tag.name in {"html", "body"}:
-            continue
-        tag.unwrap()
-
-    body = soup.body
-    html_out = "".join(str(child) for child in body.contents) if body else str(soup)
-    html_out = re.sub(r"\s+", " ", html_out).strip()
-    return html_out
 
 
 async def fetch_page(url: str) -> FetchResult:
@@ -78,19 +28,35 @@ async def fetch_page(url: str) -> FetchResult:
 
 
 async def _fetch_generic(url: str) -> FetchResult:
-    result = {"html": ""}
+    result = {"html": "", "frame_htmls": []}
 
-    crawler = PlaywrightCrawler(storage_client=MemoryStorageClient())
+    crawler = PlaywrightCrawler(storage_client=MemoryStorageClient(), headless=False)
 
     @crawler.router.default_handler
     async def handler(context):
         page = context.page
-        await page.wait_for_load_state("networkidle")
+        try:
+            await page.wait_for_load_state("networkidle", timeout=10000)
+        except Exception:
+            await page.wait_for_load_state("load")
         result["html"] = await page.content()
+        for frame in page.frames[1:]:
+            try:
+                result["frame_htmls"].append(await frame.content())
+            except Exception:
+                pass
 
+    level = logging.getLogger().level
     await crawler.run([url])
-    setup_logging()
-    return FetchResult(llm_text=clean_html_for_llm(result["html"]))
+    setup_logging(level)
+
+    parts = [extract_text(result["html"])]
+    for frame_html in result["frame_htmls"]:
+        cleaned = extract_text(frame_html)
+        if cleaned.strip():
+            parts.append(cleaned)
+
+    return FetchResult(llm_text="\n".join(parts))
 
 
 async def _fetch_linkedin(url: str) -> FetchResult:

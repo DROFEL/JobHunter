@@ -1,5 +1,7 @@
 import asyncio
 import json
+import logging
+from common.logging_config import setup_logging
 
 from common.logging_config import get_logger
 from common.models import PostingData
@@ -33,8 +35,11 @@ async def process_scrape_request(url: str, posting_id: str, attempt: int = 0):
             fetch_result = await fetch_page(url)
             if not fetch_result.llm_text:
                 raise _SoftSkip("empty llm_text")
+            setup_logging(level=logging.DEBUG)
+            logger.debug(f"Fetch result: {fetch_result}")
             logger.info(f"Finished fetching")
             posting_details = extract_posting_details(fetch_result.llm_text)
+            logger.debug(f"Posting details: {posting_details}")
             if fetch_result.pre_extracted:
                 from datetime import datetime
                 pre = fetch_result.pre_extracted
@@ -75,6 +80,7 @@ async def process_scrape_request(url: str, posting_id: str, attempt: int = 0):
 
             logger.info(f"Started summary generation")
             summary = generate_summary(posting_details, user.data['experienceContext'], company.context)
+            logger.debug(f"Summary: {summary}")
             logger.info(f"Summary generation done")
 
             posting.company_id = company.company_id

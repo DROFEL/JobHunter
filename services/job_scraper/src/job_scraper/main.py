@@ -1,9 +1,16 @@
 import asyncio
+import concurrent.futures
 import json
+import logging
+import os
+import signal
 
+from dotenv import load_dotenv
 from confluent_kafka import Consumer
 
 from common.logging_config import get_logger, setup_logging
+
+load_dotenv()
 from db import Base, engine
 from job_scraper.process_request import process_scrape_request
 from job_scraper.search_worker import handle_search
@@ -17,17 +24,31 @@ def _make_consumer(group_id: str) -> Consumer:
         "bootstrap.servers": KAFKA_BOOTSTRAP,
         "group.id": group_id,
         "auto.offset.reset": "earliest",
+        "session.timeout.ms": 6000,
+        "heartbeat.interval.ms": 2000,
     })
+
+
+async def _close_consumer(loop: asyncio.AbstractEventLoop, c: Consumer) -> None:
+    try:
+        await asyncio.wait_for(loop.run_in_executor(None, c.close), timeout=3.0)
+    except Exception:
+        pass
 
 
 async def _run_scrape_consumer() -> None:
     logger = get_logger(__name__)
     c = _make_consumer("worker-group")
-    c.subscribe(["postings.scrape"])
     loop = asyncio.get_event_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+
+    def _on_assign(consumer, partitions):
+        logger.info(f"Partitions assigned: {[p.partition for p in partitions]}")
+
+    c.subscribe(["postings.scrape"], on_assign=_on_assign)
     try:
         while True:
-            msg = await loop.run_in_executor(None, lambda: c.poll(1.0))
+            msg = await loop.run_in_executor(executor, lambda: c.poll(1.0))
             if msg is None:
                 continue
             if msg.error():
@@ -36,6 +57,7 @@ async def _run_scrape_consumer() -> None:
 
             posting_id = msg.key().decode("utf-8")
             raw_value = msg.value().decode("utf-8")
+            logger.info(f"Received posting id {posting_id} and value {raw_value}")
             try:
                 payload = json.loads(raw_value)
                 posting_url = payload["url"]
@@ -53,21 +75,24 @@ async def _run_scrape_consumer() -> None:
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (postings.scrape)")
     finally:
-        c.close()
+        await _close_consumer(loop, c)
+        executor.shutdown(wait=False)
 
 
 async def _run_search_consumer() -> None:
     logger = get_logger(__name__)
     c = _make_consumer("search-worker-group")
-    c.subscribe(["searches.discover"])
     loop = asyncio.get_event_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    c.subscribe(["searches.discover"])
     try:
         while True:
-            msg = await loop.run_in_executor(None, lambda: c.poll(1.0))
+            msg = await loop.run_in_executor(executor, lambda: c.poll(1.0))
             if msg is None:
                 continue
             if msg.error():
                 logger.error(f"Consumer error (searches.discover): {msg.error()}")
+                await asyncio.sleep(1.0)
                 continue
 
             try:
@@ -83,13 +108,32 @@ async def _run_search_consumer() -> None:
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (searches.discover)")
     finally:
-        c.close()
+        await _close_consumer(loop, c)
+        executor.shutdown(wait=False)
 
 
 async def async_main():
     Base.metadata.create_all(bind=engine)
-    setup_logging()
-    await asyncio.gather(_run_scrape_consumer(), _run_search_consumer())
+    log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
+    setup_logging(level=log_level)
+    logger = get_logger(__name__)
+
+    loop = asyncio.get_running_loop()
+    main_task = asyncio.current_task()
+
+    def _shutdown(sig: signal.Signals) -> None:
+        if main_task.cancelling():
+            return
+        logger.info(f"Received {sig.name}, shutting down")
+        main_task.cancel()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, _shutdown, sig)
+
+    try:
+        await asyncio.gather(_run_scrape_consumer(), _run_search_consumer())
+    except asyncio.CancelledError:
+        logger.info("Consumer closed")
 
 
 if __name__ == "__main__":

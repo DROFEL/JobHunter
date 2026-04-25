@@ -18,6 +18,7 @@ dependencies = [
   "beautifulsoup4",
   "requests",
   "asyncio",
+  "python-dotenv",
   "db",
   "common",
 ]

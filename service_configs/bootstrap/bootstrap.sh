@@ -12,7 +12,7 @@ wait_for_kafka() {
 }
 
 create_kafka_topics() {
-  local topics=("postings.scrape")
+  local topics=("postings.scrape" "searches.discover")
   for topic in "${topics[@]}"; do
     docker exec kafka /opt/kafka/bin/kafka-topics.sh \
       --bootstrap-server localhost:9092 \

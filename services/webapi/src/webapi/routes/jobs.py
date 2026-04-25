@@ -128,8 +128,6 @@ def update_job_resume(
 
     data = PostingData.from_db(posting.data)
     data.resume = payload.resume
-    data.title = payload.resume.targetPosition or payload.resume.position or data.title
-    data.company = payload.resume.targetCompany or data.company
     posting.data = data.to_db()
     db.commit()
     db.refresh(posting)
