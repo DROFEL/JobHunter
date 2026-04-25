@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from db.models.search_config import SearchConfig
 from db.models.user import User
 from db.session import get_fastapi_db
-from webapi.producer import delivery_report, producer
+from webapi.producer import delivery_report, producer, trace_headers
 
 router = APIRouter(prefix="/searches", tags=["searches"])
 
@@ -157,6 +157,7 @@ def dispatch_search(
         topic="searches.discover",
         key=str(cfg.search_config_id),
         value=json.dumps({"search_config_id": str(cfg.search_config_id)}),
+        headers=trace_headers(),
         on_delivery=delivery_report,
     )
     producer.flush(timeout=5)

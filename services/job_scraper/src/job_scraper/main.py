@@ -7,8 +7,11 @@ import signal
 
 from dotenv import load_dotenv
 from confluent_kafka import Consumer
+from opentelemetry import propagate, trace
+from opentelemetry.trace import StatusCode
 
 from common.logging_config import get_logger, setup_logging
+from common.tracing_config import get_tracer
 
 load_dotenv()
 from db import Base, engine
@@ -38,6 +41,7 @@ async def _close_consumer(loop: asyncio.AbstractEventLoop, c: Consumer) -> None:
 
 async def _run_scrape_consumer() -> None:
     logger = get_logger(__name__)
+    tracer = get_tracer(__name__)
     c = _make_consumer("worker-group")
     loop = asyncio.get_event_loop()
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -67,11 +71,17 @@ async def _run_scrape_consumer() -> None:
                 posting_url = raw_value
                 attempt = 0
 
-            logger.info(f"Received scrape job posting_id={posting_id} url={posting_url} attempt={attempt}")
-            try:
-                await process_scrape_request(url=posting_url, posting_id=posting_id, attempt=attempt)
-            except Exception:
-                logger.exception(f"Unhandled error for posting_id={posting_id} at {posting_url}")
+            headers = {k: v.decode("utf-8", errors="replace") for k, v in (msg.headers() or [])}
+            ctx = propagate.extract(headers)
+            with tracer.start_as_current_span("postings.scrape.process", context=ctx) as span:
+                span.set_attribute("kafka.topic", msg.topic())
+                span.set_attribute("kafka.key", posting_id)
+                try:
+                    await process_scrape_request(url=posting_url, posting_id=posting_id, attempt=attempt)
+                except Exception as e:
+                    span.record_exception(e)
+                    span.set_status(StatusCode.ERROR)
+                    logger.exception(f"Unhandled error for posting_id={posting_id} at {posting_url}")
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (postings.scrape)")
     finally:
@@ -81,6 +91,7 @@ async def _run_scrape_consumer() -> None:
 
 async def _run_search_consumer() -> None:
     logger = get_logger(__name__)
+    tracer = get_tracer(__name__)
     c = _make_consumer("search-worker-group")
     loop = asyncio.get_event_loop()
     executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -101,10 +112,16 @@ async def _run_search_consumer() -> None:
                 logger.exception("Invalid JSON on searches.discover")
                 continue
 
-            try:
-                await handle_search(payload)
-            except Exception:
-                logger.exception(f"Search discovery failed for payload={payload}")
+            headers = {k: v.decode("utf-8", errors="replace") for k, v in (msg.headers() or [])}
+            ctx = propagate.extract(headers)
+            with tracer.start_as_current_span("searches.discover.handle", context=ctx) as span:
+                span.set_attribute("kafka.topic", msg.topic())
+                try:
+                    await handle_search(payload)
+                except Exception as e:
+                    span.record_exception(e)
+                    span.set_status(StatusCode.ERROR)
+                    logger.exception(f"Search discovery failed for payload={payload}")
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (searches.discover)")
     finally:

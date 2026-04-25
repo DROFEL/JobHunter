@@ -9,7 +9,7 @@ from db.models import Company, Posting, User
 from db.session import get_db
 from job_scraper.fetcher import fetch_page
 from job_scraper.process import extract_posting_details, generate_summary, search_company_details
-from job_scraper.producer import delivery_report, producer
+from job_scraper.producer import delivery_report, producer, trace_headers
 
 MAX_ATTEMPTS = 5
 RETRY_DELAY_SECONDS = 5
@@ -120,6 +120,7 @@ async def process_scrape_request(url: str, posting_id: str, attempt: int = 0):
                     topic="postings.scrape",
                     key=str(posting_id),
                     value=json.dumps({"url": url, "attempt": next_attempt}),
+                    headers=trace_headers(),
                     on_delivery=delivery_report,
                 )
                 producer.flush(timeout=10)
@@ -138,6 +139,7 @@ async def process_scrape_request(url: str, posting_id: str, attempt: int = 0):
                         "attempts": attempt,
                         "last_error": repr(e),
                     }),
+                    headers=trace_headers(),
                     on_delivery=delivery_report,
                 )
                 producer.flush(timeout=10)

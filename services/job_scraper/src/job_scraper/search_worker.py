@@ -9,7 +9,7 @@ from common.logging_config import get_logger
 from db.models import Posting
 from db.models.search_config import SearchConfig
 from db.session import get_db
-from job_scraper.producer import delivery_report, producer
+from job_scraper.producer import delivery_report, producer, trace_headers
 from job_scraper.scrapers import linkedin_list_fetcher
 from job_scraper.scrapers.linkedin_list_fetcher import DiscoveredPosting
 
@@ -79,6 +79,7 @@ async def handle_search(payload: dict) -> None:
             topic="postings.scrape",
             key=str(posting_id),
             value=json.dumps({"url": card.url, "attempt": 0}),
+            headers=trace_headers(),
             on_delivery=delivery_report,
         )
     producer.flush(timeout=10)
