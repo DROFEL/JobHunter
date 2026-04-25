@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -59,11 +60,17 @@ def parse_cards(html: str) -> list[DiscoveredPosting]:
 
 
 def fetch(search_url: str, results_wanted: int = _PAGE_SIZE) -> list[DiscoveredPosting]:
+    proxy = os.environ.get("LINKEDIN_PROXY")
+    session = requests.Session()
+    session.headers.update(_HEADERS)
+    if proxy:
+        session.proxies.update({"http": proxy, "https": proxy})
+
     seen: set[str] = set()
     results: list[DiscoveredPosting] = []
     start = 0
     while start < _MAX_START and len(results) < results_wanted:
-        resp = requests.get(_guest_api_url(search_url, start), headers=_HEADERS, timeout=15)
+        resp = session.get(_guest_api_url(search_url, start), timeout=15)
         resp.raise_for_status()
         cards = parse_cards(resp.text)
         if not cards:

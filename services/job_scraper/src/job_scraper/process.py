@@ -1,4 +1,4 @@
-import json, os
+import json, os, threading, time
 from dotenv import load_dotenv
 from langchain_openrouter import ChatOpenRouter
 from typing import Optional, List
@@ -6,6 +6,32 @@ from pydantic import BaseModel, Field, HttpUrl
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from openrouter.errors.toomanyrequestsresponse_error import TooManyRequestsResponseError
+from openrouter.errors.responsevalidationerror import ResponseValidationError
+
+
+class _RateLimiter:
+    def __init__(self, calls_per_second: float) -> None:
+        self._lock = threading.Lock()
+        self._interval = 1.0 / calls_per_second
+        self._last_call = 0.0
+
+    def acquire(self) -> None:
+        with self._lock:
+            now = time.monotonic()
+            wait = self._interval - (now - self._last_call)
+            if wait > 0:
+                time.sleep(wait)
+            self._last_call = time.monotonic()
+
+
+_openrouter_limiter = _RateLimiter(
+    calls_per_second=float(os.environ.get("OPENROUTER_RPS", "1.0"))
+)
+
+
+def _invoke(llm, *args, **kwargs):
+    _openrouter_limiter.acquire()
+    return llm.invoke(*args, **kwargs)
 
 class ExtractedJobPostingDetails(BaseModel):
     posting_id: Optional[str] = Field(
@@ -64,10 +90,10 @@ def get_simple_llm():
     return get_llm("google/gemini-3.1-flash-lite-preview")
 
 def get_better_llm():
-    return get_llm("openai/gpt-5.3-chat")
+    return get_llm("deepseek/deepseek-v4-pro")
 
 _rate_limit_retry = retry(
-    retry=retry_if_exception_type(TooManyRequestsResponseError),
+    retry=retry_if_exception_type((TooManyRequestsResponseError, ResponseValidationError)),
     wait=wait_exponential(multiplier=2, min=10, max=120),
     stop=stop_after_attempt(4),
     reraise=True,
@@ -76,11 +102,10 @@ _rate_limit_retry = retry(
 @_rate_limit_retry
 def extract_posting_details(text: str) -> ExtractedJobPostingDetails:
     llm = get_simple_llm().with_structured_output(ExtractedJobPostingDetails)
-
-    result = llm.invoke(
-        "Extract this into the provided job posting schema, posting_id is a jobboard id is a id on the job board, external id is different quique internal to the company id:\n\n" + text
+    return _invoke(
+        llm,
+        "Extract this into the provided job posting schema, posting_id is a jobboard id is a id on the job board, external id is different quique internal to the company id:\n\n" + text,
     )
-    return result
 
 @_rate_limit_retry
 def search_company_details(company_name: str) -> FoundCompanyDetails:
@@ -92,31 +117,32 @@ def search_company_details(company_name: str) -> FoundCompanyDetails:
             }
         ]
     )
-
-    research_text = researcher.invoke(
+    research_text = _invoke(
+        researcher,
         f"Search the web for company information relevant to a job applicant about {company_name}. "
         "Summarize the company mission, product/business, size/stage if available, culture signals, recent news, "
-        "and anything useful for tailoring an application."
+        "and anything useful for tailoring an application.",
     )
-
     extractor = get_simple_llm().with_structured_output(FoundCompanyDetails)
-
-    return extractor.invoke(
+    return _invoke(
+        extractor,
         "Extract the following research into the schema.\n\n"
         f"Company name: {company_name}\n\n"
-        f"Research:\n{research_text.content}"
+        f"Research:\n{research_text.content}",
     )
-    
+
+@_rate_limit_retry
 def generate_summary(
     posting_details: ExtractedJobPostingDetails,
     personal_summary: str,
     company_details: str,
-):
+) -> str:
     posting_text = json.dumps(posting_details.model_dump(mode="json"), indent=2)
-
     prompt = f"""
-                Summarize this job posting. Estimate job fit based on my personal summary. Provide EXTREMELY HONEST matching score based on matching stack and level of seniority
-                Keep response short and consise
+                Summarize this job posting. Estimate job fit based on my personal summary.
+                Provide EXTREMELY HONEST matching score based on matching stack and level of seniority out of 100
+                Keep response short and consise.
+                DO NOT INCLUDE ANY UNNECESSARY INFORMATION
 
                 Job posting:
                 {posting_text}
@@ -130,8 +156,7 @@ def generate_summary(
                 Also explain:
                 - what should be included in the resume for this particular position
                 - what is not worth including in the resume for this particular position
-                
+
                 DO NOT give generic resume advise
                 """
-
-    return get_better_llm().invoke(prompt).content
+    return _invoke(get_better_llm(), prompt).content
