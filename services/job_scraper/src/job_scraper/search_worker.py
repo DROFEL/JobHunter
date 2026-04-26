@@ -87,13 +87,14 @@ async def handle_search(payload: dict) -> None:
     _update_config_status(search_config_id, "Complete", new_count)
 
 
-def _update_config_status(search_config_id: UUID, status: str, total_scraped: int) -> None:
+def _update_config_status(search_config_id: UUID, status: str, scraped_last_run: int) -> None:
     with get_db() as db:
         cfg = db.query(SearchConfig).filter(SearchConfig.search_config_id == search_config_id).first()
         if cfg is None:
             return
         cfg.status = status
-        cfg.total_scraped = total_scraped
+        cfg.scraped_last_run = scraped_last_run
+        cfg.scraped_total += scraped_last_run
         cfg.updated_at = datetime.now(timezone.utc)
         db.commit()
 
@@ -101,26 +102,40 @@ def _update_config_status(search_config_id: UUID, status: str, total_scraped: in
 def _upsert_posting(user_id: UUID, card: DiscoveredPosting) -> UUID | None:
     logger = get_logger(__name__)
     with get_db() as db:
-        existing = (
+        # Pass 1: look up by board_id (handles both auto and manual postings that already have one)
+        by_board = (
             db.query(Posting)
             .filter(Posting.user_id == user_id, Posting.board_id == card.board_id)
             .first()
         )
-        if existing is not None:
-            if existing.scrapeStatus == "Complete":
+        if by_board is not None:
+            if by_board.source != "manual":
+                # Auto-discovered: never override, skip silently
                 return None
-            if existing.scrapeStatus in ("Queued", "Started"):
-                return None
-            if existing.scrapeStatus == "Failed":
-                logger.info(
-                    f"Skipping previously-failed posting {existing.posting_id} "
-                    f"(board={card.board_id}); admin action required to retry"
-                )
-            return None
+            # Manual posting already linked to this board_id — enrich if not yet scraped
+            return _enrich_manual(db, by_board, card, logger)
 
+        # Pass 2: look up manual postings by URL (not yet linked to a board_id)
+        by_url = (
+            db.query(Posting)
+            .filter(
+                Posting.user_id == user_id,
+                Posting.board_id.is_(None),
+                Posting.source == "manual",
+                Posting.data["url"].as_string() == card.url,
+            )
+            .first()
+        )
+        if by_url is not None:
+            by_url.board_id = card.board_id
+            db.flush()
+            return _enrich_manual(db, by_url, card, logger)
+
+        # Not found: create a new auto-discovered posting
         posting = Posting(
             user_id=user_id,
             board_id=card.board_id,
+            source="auto",
             scrapeStatus="Queued",
             data={
                 "title": card.title or "",
@@ -132,3 +147,26 @@ def _upsert_posting(user_id: UUID, card: DiscoveredPosting) -> UUID | None:
         db.commit()
         db.refresh(posting)
         return posting.posting_id
+
+
+def _enrich_manual(db, posting: Posting, card: DiscoveredPosting, logger) -> UUID | None:
+    if posting.scrapeStatus in ("Complete", "Queued", "Started"):
+        return None
+    if posting.scrapeStatus == "Failed":
+        logger.info(
+            f"Skipping previously-failed manual posting {posting.posting_id} "
+            f"(board={card.board_id}); admin action required to retry"
+        )
+        return None
+    # Update only fields where the card has a real value — never overwrite with empty
+    data = dict(posting.data or {})
+    if card.title:
+        data.setdefault("title", card.title)
+    if card.company:
+        data.setdefault("company", card.company)
+    data["url"] = card.url
+    posting.data = data
+    posting.scrapeStatus = "Queued"
+    db.commit()
+    db.refresh(posting)
+    return posting.posting_id

@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 _BASE_URL = "https://www.linkedin.com"
-_PAGE_SIZE = 25
+_PAGE_SIZE = 10
 _MAX_START = 1000
 _HEADERS = {
     "User-Agent": (

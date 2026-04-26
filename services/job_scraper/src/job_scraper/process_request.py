@@ -84,7 +84,10 @@ async def process_scrape_request(url: str, posting_id: str, attempt: int = 0):
             logger.info(f"Summary generation done")
 
             posting.company_id = company.company_id
-            posting.board_id = posting_details.posting_id
+            # Auto-discovered postings have board_id set reliably from the URL;
+            # only allow the LLM-extracted value for manual postings or when not yet set.
+            if posting.source != "auto" or not posting.board_id:
+                posting.board_id = posting_details.posting_id
             posting.external_id = posting_details.external_id
             posting.scrapeStatus = "Complete"
 

@@ -35,7 +35,8 @@ def _to_response(cfg: SearchConfig) -> dict[str, Any]:
         "params": cfg.params,
         "results_wanted": cfg.results_wanted,
         "status": cfg.status,
-        "total_scraped": cfg.total_scraped,
+        "scraped_last_run": cfg.scraped_last_run,
+        "scraped_total": cfg.scraped_total,
         "created_at": cfg.created_at.isoformat() if cfg.created_at else None,
         "updated_at": cfg.updated_at.isoformat() if cfg.updated_at else None,
     }
@@ -77,7 +78,8 @@ def create_search(
         params=payload.params,
         results_wanted=payload.results_wanted,
         status="Idle",
-        total_scraped=0,
+        scraped_last_run=0,
+        scraped_total=0,
     )
     db.add(cfg)
     db.commit()

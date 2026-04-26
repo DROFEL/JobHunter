@@ -8,7 +8,7 @@ import signal
 from dotenv import load_dotenv
 from confluent_kafka import Consumer
 from opentelemetry import propagate, trace
-from opentelemetry.trace import StatusCode
+from opentelemetry.trace import Link, StatusCode
 
 from common.logging_config import get_logger, setup_logging
 from common.tracing_config import get_tracer
@@ -72,8 +72,10 @@ async def _run_scrape_consumer() -> None:
                 attempt = 0
 
             headers = {k: v.decode("utf-8", errors="replace") for k, v in (msg.headers() or [])}
-            ctx = propagate.extract(headers)
-            with tracer.start_as_current_span("postings.scrape.process", context=ctx) as span:
+            parent_ctx = propagate.extract(headers)
+            parent_span_ctx = trace.get_current_span(parent_ctx).get_span_context()
+            links = [Link(parent_span_ctx)] if parent_span_ctx.is_valid else []
+            with tracer.start_as_current_span("postings.scrape.process", links=links) as span:
                 span.set_attribute("kafka.topic", msg.topic())
                 span.set_attribute("kafka.key", posting_id)
                 try:

@@ -103,7 +103,7 @@ def create_job(
     db: Session = Depends(get_fastapi_db),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
-    posting = Posting(user_id=user_uuid, data=payload.to_db())
+    posting = Posting(user_id=user_uuid, data=payload.to_db(), source="manual")
     db.add(posting)
     db.commit()
     db.refresh(posting)

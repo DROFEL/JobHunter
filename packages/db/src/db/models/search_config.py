@@ -29,6 +29,7 @@ class SearchConfig(Base):
     params: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, server_default=text("'{}'::json"))
     results_wanted: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("25"))
     status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'Idle'"))
-    total_scraped: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    scraped_last_run: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    scraped_total: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now(), onupdate=func.now())

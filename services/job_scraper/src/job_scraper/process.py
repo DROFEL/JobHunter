@@ -121,7 +121,7 @@ def search_company_details(company_name: str) -> FoundCompanyDetails:
         researcher,
         f"Search the web for company information relevant to a job applicant about {company_name}. "
         "Summarize the company mission, product/business, size/stage if available, culture signals, recent news, "
-        "and anything useful for tailoring an application.",
+        "and anything useful for tailoring an application. If no relevant information is provided ONLY output error no information provide",
     )
     extractor = get_simple_llm().with_structured_output(FoundCompanyDetails)
     return _invoke(
@@ -143,6 +143,7 @@ def generate_summary(
                 Provide EXTREMELY HONEST matching score based on matching stack and level of seniority out of 100
                 Keep response short and consise.
                 DO NOT INCLUDE ANY UNNECESSARY INFORMATION
+                If no relevant information is provided ONLY output error no information provide
 
                 Job posting:
                 {posting_text}

@@ -33,6 +33,7 @@ class Posting(Base):
         nullable=True,
     )
     board_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'auto'"))
     data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str | None] = mapped_column(Text, nullable=True)
     scrapeStatus: Mapped[str | None] = mapped_column(Text, nullable=True)

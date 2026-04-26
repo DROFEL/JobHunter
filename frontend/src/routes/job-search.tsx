@@ -146,7 +146,8 @@ function SearchRow({ cfg }: { cfg: SearchConfigDTO }) {
       <td className="px-4 py-3">
         <StatusBadge status={cfg.status} />
       </td>
-      <td className="px-4 py-3 text-sm text-center">{cfg.total_scraped}</td>
+      <td className="px-4 py-3 text-sm text-center">{cfg.scraped_last_run}</td>
+      <td className="px-4 py-3 text-sm text-center">{cfg.scraped_total}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <Button
@@ -197,14 +198,15 @@ function JobSearchPage() {
                 <th className="px-4 py-3">Location</th>
                 <th className="px-4 py-3 text-center">Results</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-center">Scraped</th>
+                <th className="px-4 py-3 text-center">Last Run</th>
+                <th className="px-4 py-3 text-center">Total</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {configs.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     No search configs yet. Create one to get started.
                   </td>
                 </tr>

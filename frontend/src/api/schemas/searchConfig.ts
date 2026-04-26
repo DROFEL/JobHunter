@@ -6,7 +6,8 @@ export const searchConfigSchema = z.object({
   params: z.record(z.string(), z.string()),
   results_wanted: z.number(),
   status: z.enum(["Idle", "Running", "Complete", "Failed"]),
-  total_scraped: z.number(),
+  scraped_last_run: z.number(),
+  scraped_total: z.number(),
   created_at: z.string().nullable(),
   updated_at: z.string().nullable(),
 })
