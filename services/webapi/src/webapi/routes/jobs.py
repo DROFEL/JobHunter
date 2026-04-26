@@ -2,8 +2,9 @@ from confluent_kafka import Producer
 
 from typing import Annotated, Any
 from uuid import UUID
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from pydantic import BaseModel
+from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import Session
 
 from db.models.posting import Posting
@@ -46,15 +47,56 @@ class JobPatchPayload(BaseModel):
     model_config = {"extra": "allow"}
 
 
+_SORT_COLUMNS: dict[str, Any] = {
+    "title":    lambda: Posting.data["title"].astext,
+    "company":  lambda: Posting.data["company"].astext,
+    "posted":   lambda: Posting.data["posted"].astext,
+    "deadline": lambda: Posting.data["deadline"].astext,
+    "status":   lambda: Posting.data["status"].astext,
+}
+
 @router.get("")
 def list_jobs(
     external_user_id: str = Depends(get_external_user_id),
     db: Session = Depends(get_fastapi_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: str | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    saved_only: bool = Query(False),
+    sort_by: str = Query("posting_id"),
+    sort_order: str = Query("desc"),
 ):
     user_uuid = get_user_uuid(external_user_id, db)
-    postings = db.query(Posting).filter(Posting.user_id == user_uuid).all()
-    # print([_to_response(p) for p in postings])
-    return [_to_response(p) for p in postings]
+    q = db.query(Posting).filter(Posting.user_id == user_uuid)
+
+    if search:
+        pattern = f"%{search.lower()}%"
+        q = q.filter(or_(
+            func.lower(Posting.data["title"].astext).like(pattern),
+            func.lower(Posting.data["company"].astext).like(pattern),
+            func.lower(Posting.data["location"].astext).like(pattern),
+        ))
+
+    if status_filter:
+        q = q.filter(Posting.data["status"].astext == status_filter)
+
+    if saved_only:
+        q = q.filter(Posting.data["saved"].astext == "true")
+
+    sort_col = _SORT_COLUMNS[sort_by]() if sort_by in _SORT_COLUMNS else Posting.posting_id
+    order_fn = desc if sort_order == "desc" else asc
+    q = q.order_by(order_fn(sort_col))
+
+    total = q.count()
+    postings = q.offset((page - 1) * page_size).limit(page_size).all()
+
+    return {
+        "items": [_to_response(p) for p in postings],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
 
 
 @router.get("/{job_id}")

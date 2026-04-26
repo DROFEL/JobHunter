@@ -12,13 +12,26 @@ export class ApiError extends Error {
   }
 }
 
+type QueryParams = Record<string, string | number | boolean | undefined | null>
+
 async function apiFetch<T>(
   method: string,
   path: string,
   schema: z.ZodSchema<T>,
   body?: unknown,
+  params?: QueryParams,
 ): Promise<T> {
-  const init: RequestInit = { 
+  let url = `${API_BASE}${path}`
+  if (params) {
+    const qs = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== "") qs.set(k, String(v))
+    }
+    const s = qs.toString()
+    if (s) url += `?${s}`
+  }
+
+  const init: RequestInit = {
     method,
     headers: {"Authentication": "1"}
   }
@@ -31,7 +44,7 @@ async function apiFetch<T>(
     init.body = JSON.stringify(body)
   }
 
-  const res = await fetch(`${API_BASE}${path}`, init)
+  const res = await fetch(url, init)
 
   if (!res.ok) {
     throw new ApiError(res.status, `${method} ${path} → ${res.status} ${res.statusText}`)
@@ -47,8 +60,8 @@ async function apiFetch<T>(
 }
 
 export const api = {
-  get: <T>(path: string, schema: z.ZodSchema<T>): Promise<T> =>
-    apiFetch("GET", path, schema),
+  get: <T>(path: string, schema: z.ZodSchema<T>, params?: QueryParams): Promise<T> =>
+    apiFetch("GET", path, schema, undefined, params),
 
   post: <T>(path: string, schema: z.ZodSchema<T>, body: unknown): Promise<T> =>
     apiFetch("POST", path, schema, body),

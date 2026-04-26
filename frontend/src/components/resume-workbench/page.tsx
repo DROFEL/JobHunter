@@ -14,7 +14,7 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable.tsx"
 import { useResumeTemplates } from "@/api/hooks/useResumeTemplates.ts"
-import { useSavedJobs, useCreateSavedJob, useUpdateSavedJob, useUpdateSavedJobResume } from "@/api/hooks/useSavedJobs.ts"
+import { useSavedJobs, useSavedJob, useCreateSavedJob, useUpdateSavedJob, useUpdateSavedJobResume } from "@/api/hooks/useSavedJobs.ts"
 
 const DEFAULT_PANEL_SIZES = [18, 42, 40] as const
 const MIN_PANEL_SIZES = [16, 28, 24] as const
@@ -44,7 +44,8 @@ function seedResumeFromJob(job: SavedJob): JobResume {
 
 export function ResumeWorkbenchPage() {
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
-  const { data: jobs = [] } = useSavedJobs()
+  // Minimal fetch — used only to know whether any jobs exist at all.
+  const { data: firstPage } = useSavedJobs({ page: 1, page_size: 1 })
   const { data: templates = [] } = useResumeTemplates()
   const { mutate: saveResume } = useUpdateSavedJobResume()
   const { mutate: createJob } = useCreateSavedJob()
@@ -55,17 +56,9 @@ export function ResumeWorkbenchPage() {
   const [editingMeta, setEditingMeta] = useState<{ status?: JobStatus; employmentType?: string; salary?: string; location?: string; deadline?: string }>({})
   const [isDesktop, setIsDesktop] = useState(false)
 
-  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? jobs[0]
-
-  // Seed selection once when jobs first arrive
-  const initialized = useRef(false)
-  useEffect(() => {
-    if (jobs.length > 0 && !initialized.current) {
-      initialized.current = true
-      setSelectedJobId(jobs[0].id)
-      setEditingResume(seedResumeFromJob(jobs[0]))
-    }
-  }, [jobs])
+  // Fetch the currently selected job individually.
+  const { data: selectedJobData } = useSavedJob(selectedJobId)
+  const selectedJob = selectedJobData as SavedJob | undefined
 
   // Re-seed resume when scraping completes so title/summary reflect fetched data
   const prevScrapeStatusRef = useRef<string | null | undefined>(undefined)
@@ -89,24 +82,16 @@ export function ResumeWorkbenchPage() {
 
     return () => mediaQuery.removeEventListener("change", updateLayout)
   }, [])
-  const hasJobs = jobs.length > 0
+  const hasJobs = (firstPage?.total ?? 0) > 0
 
-  const sidebarJobs = useMemo(
-    () =>
-      jobs.map((job) => {
-        if (job.id !== selectedJobId || !editingResume) {
-          return job
-        }
-
-        return {
-          ...job,
-          title: editingResume.targetPosition || editingResume.position || job.title,
-          company: editingResume.targetCompany || job.company,
-          ...editingMeta,
-        }
-      }),
-    [editingMeta, editingResume, jobs, selectedJobId],
-  )
+  const selectedJobOverride = useMemo(() => {
+    if (!editingResume) return undefined
+    return {
+      title:   editingResume.targetPosition || editingResume.position || undefined,
+      company: editingResume.targetCompany || undefined,
+      ...editingMeta,
+    }
+  }, [editingMeta, editingResume])
 
   function handleSelectJob(job: SavedJob) {
     if (editingResume && selectedJobId) {
@@ -147,6 +132,7 @@ export function ResumeWorkbenchPage() {
         deadline: "",
         saved: true,
         status: "Found",
+        scrapeStatus: null,
         resume,
       },
       {
@@ -205,7 +191,8 @@ export function ResumeWorkbenchPage() {
         <div className="h-full overflow-y-auto px-3 py-3">
           <div className="space-y-3">
             <Sidebar
-              jobs={sidebarJobs}
+              selectedJobOverride={selectedJobOverride}
+              onInit={(job) => { setSelectedJobId(job.id); setEditingResume(seedResumeFromJob(job)) }}
               selectedJobId={selectedJobId}
               onSelectJob={handleSelectJob}
               onCreateFromTemplate={handleCreateFromTemplate}
@@ -232,7 +219,8 @@ export function ResumeWorkbenchPage() {
           >
             <div className="workspace-panel h-full min-h-0 overflow-y-auto p-3">
               <Sidebar
-                jobs={sidebarJobs}
+                selectedJobOverride={selectedJobOverride}
+              onInit={(job) => { setSelectedJobId(job.id); setEditingResume(seedResumeFromJob(job)) }}
                 selectedJobId={selectedJobId}
                 onSelectJob={handleSelectJob}
                 onCreateFromTemplate={handleCreateFromTemplate}
