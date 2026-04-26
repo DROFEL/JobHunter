@@ -1,5 +1,5 @@
 import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
-import type { ResumeData } from "@/components/resume-workbench/types.ts"
+import { RESUME_SECTION_IDS, type ResumeData } from "@/components/resume-workbench/types.ts"
 
 function normalizeExternalUrl(value: string) {
   const trimmed = value.trim()
@@ -90,91 +90,100 @@ export function ClassicPdf({ data }: { data: ResumeData }) {
           ))}
         </View>
 
-        {data.summary?.trim() ? <Text style={styles.summary}>{data.summary}</Text> : null}
+        {(data.sectionOrder ?? RESUME_SECTION_IDS).map((id) => {
+          switch (id) {
+            case "summary":
+              return data.summary?.trim()
+                ? <Text key="summary" style={styles.summary}>{data.summary}</Text>
+                : null
 
-        {edu.length > 0 && (
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Education:</Text>
-            {edu.map((item) => (
-              <View key={item.id} style={{ marginTop: 4 }}>
-                <View style={styles.rowBetween}>
-                  <Text>
-                    <Text style={styles.bold}>{item.school || "Institution"}</Text>
-                    {item.degree ? <Text>, {item.degree}</Text> : null}
-                  </Text>
-                  <Text style={styles.bold}>{item.year}</Text>
-                </View>
-                {item.description?.trim() ? (
-                  <Text style={{ marginTop: 2, fontSize: 10.5, color: "#444" }}>{item.description}</Text>
-                ) : null}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {skills.length > 0 && (
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Skills:</Text>
-            {skills.map((skillType) => (
-              <Text key={skillType.id} style={{ marginTop: 2 }}>
-                <Text style={styles.bold}>{skillType.name || "Skills"}: </Text>
-                <Text>{skillType.skills.filter((s) => s.trim()).join(", ")}</Text>
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {experiences.length > 0 && (
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Work Experience:</Text>
-            {experiences.map((job) => (
-              <View key={job.id} style={{ marginTop: 6 }}>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.bold}>{job.company || "Company / Role"}</Text>
-                  <Text style={styles.bold}>{job.duration}</Text>
-                </View>
-                {job.points
-                  .filter((p) => p.text.trim())
-                  .map((point) => (
-                    <View key={point.id} style={styles.bullet}>
-                      <Text style={styles.bulletDot}>•</Text>
-                      <Text style={styles.bulletText}>{point.text}</Text>
+            case "education":
+              return edu.length > 0 ? (
+                <View key="education" style={styles.sectionWrap}>
+                  <Text style={styles.sectionTitle}>Education:</Text>
+                  {edu.map((item) => (
+                    <View key={item.id} style={{ marginTop: 4 }}>
+                      <View style={styles.rowBetween}>
+                        <Text>
+                          <Text style={styles.bold}>{item.school || "Institution"}</Text>
+                          {item.degree ? <Text>, {item.degree}</Text> : null}
+                        </Text>
+                        <Text style={styles.bold}>{item.year}</Text>
+                      </View>
+                      {item.description?.trim() ? (
+                        <Text style={{ marginTop: 2, fontSize: 10.5, color: "#444" }}>{item.description}</Text>
+                      ) : null}
                     </View>
                   ))}
-              </View>
-            ))}
-          </View>
-        )}
+                </View>
+              ) : null
 
-        {projects.length > 0 && (
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Projects and Extracurricular Activities:</Text>
-            {projects.map((project) => (
-              <View key={project.id} style={styles.bullet}>
-                <Text style={styles.bulletDot}>•</Text>
-                <Text style={styles.bulletText}>
-                  <Text style={styles.bold}>{project.name || "Project"}</Text>
-                  {project.description ? <Text>: {project.description}</Text> : null}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
+            case "skills":
+              return skills.length > 0 ? (
+                <View key="skills" style={styles.sectionWrap}>
+                  <Text style={styles.sectionTitle}>Skills:</Text>
+                  {skills.map((skillType) => (
+                    <Text key={skillType.id} style={{ marginTop: 2 }}>
+                      <Text style={styles.bold}>{skillType.name || "Skills"}: </Text>
+                      <Text>{skillType.skills.filter((s) => s.trim()).join(", ")}</Text>
+                    </Text>
+                  ))}
+                </View>
+              ) : null
 
-        {languages.length > 0 && (
-          <View style={styles.sectionWrap}>
-            <Text style={styles.sectionTitle}>Languages:</Text>
-            <Text style={{ marginTop: 2 }}>
-              {languages.map((l, i) => (
-                <Text key={l.id}>
-                  {i > 0 ? <Text>{"  |  "}</Text> : null}
-                  <Text style={styles.bold}>{l.language}</Text>
-                  <Text>{" – "}{l.level}</Text>
-                </Text>
-              ))}
-            </Text>
-          </View>
-        )}
+            case "experience":
+              return experiences.length > 0 ? (
+                <View key="experience" style={styles.sectionWrap}>
+                  <Text style={styles.sectionTitle}>Work Experience:</Text>
+                  {experiences.map((job) => (
+                    <View key={job.id} style={{ marginTop: 6 }}>
+                      <View style={styles.rowBetween}>
+                        <Text style={styles.bold}>{job.company || "Company / Role"}</Text>
+                        <Text style={styles.bold}>{job.duration}</Text>
+                      </View>
+                      {job.points
+                        .filter((p) => p.text.trim())
+                        .map((point) => (
+                          <View key={point.id} style={styles.bullet}>
+                            <Text style={styles.bulletDot}>•</Text>
+                            <Text style={styles.bulletText}>{point.text}</Text>
+                          </View>
+                        ))}
+                    </View>
+                  ))}
+                </View>
+              ) : null
+
+            case "projects":
+              return projects.length > 0 ? (
+                <View key="projects" style={styles.sectionWrap}>
+                  <Text style={styles.sectionTitle}>Projects and Extracurricular Activities:</Text>
+                  {projects.map((project) => (
+                    <View key={project.id} style={styles.bullet}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletText}>
+                        <Text style={styles.bold}>{project.name || "Project"}</Text>
+                        {project.description ? <Text>: {project.description}</Text> : null}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null
+
+            case "languages":
+              return languages.length > 0 ? (
+                <View key="languages" style={styles.sectionWrap}>
+                  <Text style={styles.sectionTitle}>Languages:</Text>
+                  <Text style={{ marginTop: 2 }}>
+                    {languages.map((l) => `${l.language} – ${l.level}`).join(", ")}
+                  </Text>
+                </View>
+              ) : null
+
+            default:
+              return null
+          }
+        })}
       </Page>
     </Document>
   )

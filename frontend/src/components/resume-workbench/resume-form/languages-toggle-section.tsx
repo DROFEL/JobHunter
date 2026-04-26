@@ -16,7 +16,7 @@ export function LanguagesToggleSection({ languages, enabledIds, onChange }: Lang
   }
 
   return (
-    <div className="space-y-3">
+    <div className="rounded-xl border border-border/60 bg-accent/10 p-5 pr-8 space-y-3">
       <div>
         <h3 className="text-sm font-semibold">Languages</h3>
         <p className="text-xs text-muted-foreground">Toggle which languages appear on this resume</p>

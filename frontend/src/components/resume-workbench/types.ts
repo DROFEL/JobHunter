@@ -45,6 +45,9 @@ export interface ProfileSettings {
 }
 
 // Per-job editable resume content — stored inside each SavedJob
+export const RESUME_SECTION_IDS = ["summary", "education", "experience", "projects", "skills", "languages"] as const
+export type ResumeSectionId = typeof RESUME_SECTION_IDS[number]
+
 export interface JobResume {
   position: string
   summary: string
@@ -56,6 +59,7 @@ export interface JobResume {
   projects: ProjectItem[]
   skillTypes: SkillTypeItem[]
   enabledLanguageIds: string[]
+  sectionOrder?: ResumeSectionId[]
 }
 
 // Full assembled data passed to the PDF template

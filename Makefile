@@ -12,6 +12,7 @@ sync:
 	uv sync --all-packages
 
 start:
+	trap 'kill 0' INT TERM; \
 	$(MAKE) frontend & \
 	$(MAKE) api & \
 	$(MAKE) scraper & \

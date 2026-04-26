@@ -208,6 +208,7 @@ export function ResumeTemplatesPage() {
         jobMeta: undefined,
         onJobMetaChange: undefined,
         selectedJobId: "",
+        scrapeStatus: null,
         onGenerateSummary: () => {},
       }}>
         <ResumeContentForm />

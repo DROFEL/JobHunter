@@ -12,7 +12,7 @@ wait_for_kafka() {
 }
 
 create_kafka_topics() {
-  local topics=("postings.scrape")
+  local topics=("postings.scrape" "searches.discover")
   for topic in "${topics[@]}"; do
     docker exec kafka /opt/kafka/bin/kafka-topics.sh \
       --bootstrap-server localhost:9092 \
@@ -34,7 +34,7 @@ wait_for_minio() {
 }
 
 create_minio_buckets() {
-  local buckets=("resumes" "posting-artifacts")
+  local buckets=("resumes" "posting-artifacts" "crawler-state")
   # Use mc (MinIO client) inside the minio container
   docker exec "$(docker compose ps -q minio)" sh -c \
     "mc alias set local http://localhost:9000 minioadmin minioadmin 2>/dev/null || true"

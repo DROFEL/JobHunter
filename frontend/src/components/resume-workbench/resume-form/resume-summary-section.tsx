@@ -22,7 +22,7 @@ export function ResumeSummarySection({
   onSuggestSummary,
 }: ResumeSummarySectionProps) {
   return (
-    <section className="space-y-4">
+    <section className="rounded-xl border border-border/60 bg-accent/10 p-5 pr-8 space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Current Position</label>
         <Input

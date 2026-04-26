@@ -43,8 +43,8 @@ export const savedJobsHandlers = [
 
     db.jobs[index] = {
       ...db.jobs[index],
-      title: resume.targetPosition || resume.position || db.jobs[index].title,
-      company: resume.targetCompany || db.jobs[index].company,
+      title: resume?.targetPosition || resume?.position || db.jobs[index].title,
+      company: resume?.targetCompany || db.jobs[index].company,
       resume,
     }
 

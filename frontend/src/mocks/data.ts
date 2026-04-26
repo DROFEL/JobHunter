@@ -19,6 +19,7 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
         school: "York University",
         degree: "BSc Computer Science",
         year: "Expected August 2026",
+        description: "",
       },
     ],
     skillPool: [
@@ -49,6 +50,8 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
       summary:
         "Seeking a frontend engineer who can turn complex product workflows into polished, high-conversion interfaces using React, TypeScript, and design systems.",
       url: "https://jobs.example.com/northstar-senior-frontend",
+      deadline: "",
+      scrapeStatus: null,
       saved: true,
       status: "Applied",
       resume: {
@@ -122,6 +125,8 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
       summary:
         "Looking for a product-minded engineer comfortable owning UX details, shipping quickly, and collaborating deeply with design and growth teams.",
       url: "https://jobs.example.com/arc-product-engineer",
+      deadline: "",
+      scrapeStatus: null,
       saved: true,
       status: "Found",
       resume: {
@@ -149,6 +154,8 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
       summary:
         "Join a healthcare platform modernizing patient-facing tools with accessible, performant React experiences and measurable product improvements.",
       url: "https://jobs.example.com/clearpath-react",
+      deadline: "",
+      scrapeStatus: null,
       saved: true,
       status: "Interview",
       resume: {
@@ -176,6 +183,8 @@ export const db: { jobs: SavedJobDTO[]; profile: ProfileSettingsDTO; templates: 
       summary:
         "Build reusable UI foundations, collaborate with brand design, and elevate a commerce product with motion, responsiveness, and maintainable patterns.",
       url: "https://jobs.example.com/atlas-ui-engineer",
+      deadline: "",
+      scrapeStatus: null,
       saved: false,
       status: "Found",
       resume: {

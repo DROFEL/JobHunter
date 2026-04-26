@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { JOB_STATUSES } from "@/components/resume-workbench/types.ts"
+import { JOB_STATUSES, RESUME_SECTION_IDS } from "@/components/resume-workbench/types.ts"
 
 // Mirrors WorkPoint
 const workPointSchema = z.object({
@@ -41,6 +41,7 @@ export const jobResumeSchema = z.object({
   projects: z.array(projectItemSchema),
   skillTypes: z.array(skillTypeItemSchema),
   enabledLanguageIds: z.array(z.string()).default([]),
+  sectionOrder: z.array(z.enum(RESUME_SECTION_IDS)).optional(),
 })
 
 // Mirrors SavedJob
@@ -63,3 +64,12 @@ export const savedJobSchema = z.object({
 
 export type JobResumeDTO = z.infer<typeof jobResumeSchema>
 export type SavedJobDTO = z.infer<typeof savedJobSchema>
+
+export const paginatedJobsSchema = z.object({
+  items: z.array(savedJobSchema),
+  total: z.number(),
+  page: z.number(),
+  page_size: z.number(),
+})
+
+export type PaginatedJobsDTO = z.infer<typeof paginatedJobsSchema>

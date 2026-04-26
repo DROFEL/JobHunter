@@ -1,34 +1,49 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { z } from "zod"
 
 import { api } from "@/api/client.ts"
 import {
   jobResumeSchema,
+  paginatedJobsSchema,
   savedJobSchema,
   type JobResumeDTO,
+  type PaginatedJobsDTO,
   type SavedJobDTO,
 } from "@/api/schemas/savedJob.ts"
 
 const ENDPOINT = "/jobs"
 
-// Key factory — keeps all query keys for this domain in one place
-const savedJobsKeys = {
-  all: () => ["savedJobs"] as const,
-  lists: () => [...savedJobsKeys.all(), "list"] as const,
-  detail: (id: string) => [...savedJobsKeys.all(), "detail", id] as const,
+export interface JobsQueryParams {
+  page?: number
+  page_size?: number
+  search?: string
+  status?: string
+  saved_only?: boolean
+  sort_by?: string
+  sort_order?: "asc" | "desc"
 }
 
+const savedJobsKeys = {
+  all:    ()                        => ["savedJobs"] as const,
+  lists:  ()                        => [...savedJobsKeys.all(), "list"] as const,
+  list:   (params: JobsQueryParams) => [...savedJobsKeys.lists(), params] as const,
+  detail: (id: string)              => [...savedJobsKeys.all(), "detail", id] as const,
+}
+
+// Updates every cached page that contains the mutated job in-place.
 function syncSavedJobsListCache(queryClient: ReturnType<typeof useQueryClient>, updatedJob: SavedJobDTO) {
-  queryClient.setQueryData<SavedJobDTO[] | undefined>(savedJobsKeys.lists(), (jobs) =>
-    jobs?.map((job) => (job.id === updatedJob.id ? updatedJob : job)) ?? jobs,
+  queryClient.setQueriesData<PaginatedJobsDTO>(
+    { queryKey: savedJobsKeys.lists() },
+    (data) => data
+      ? { ...data, items: data.items.map((j) => j.id === updatedJob.id ? updatedJob : j) }
+      : data,
   )
 }
 
-/** Fetch all saved jobs. */
-export function useSavedJobs() {
+/** Fetch a paginated, filtered, sorted list of jobs. */
+export function useSavedJobs(params: JobsQueryParams = {}) {
   return useQuery({
-    queryKey: savedJobsKeys.lists(),
-    queryFn: () => api.get(ENDPOINT, z.array(savedJobSchema)),
+    queryKey: savedJobsKeys.list(params),
+    queryFn: () => api.get(ENDPOINT, paginatedJobsSchema, params as Record<string, string | number | boolean | undefined>),
   })
 }
 
@@ -41,7 +56,7 @@ export function useSavedJob(id: string) {
   })
 }
 
-/** Create a new saved job. Invalidates the list on success. */
+/** Create a new saved job. Invalidates all list caches. */
 export function useCreateSavedJob() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -53,7 +68,7 @@ export function useCreateSavedJob() {
   })
 }
 
-/** Update the resume content of a saved job. Updates list and detail caches. */
+/** Update the resume content of a saved job. */
 export function useUpdateSavedJobResume() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -62,7 +77,6 @@ export function useUpdateSavedJobResume() {
     onSuccess: (updatedJob) => {
       syncSavedJobsListCache(queryClient, updatedJob)
       queryClient.setQueryData(savedJobsKeys.detail(updatedJob.id), updatedJob)
-      queryClient.invalidateQueries({ queryKey: savedJobsKeys.lists() })
     },
   })
 }
@@ -80,7 +94,7 @@ export function useUpdateSavedJob() {
   })
 }
 
-/** Toggle the saved flag on a job. Updates list and detail caches. */
+/** Toggle the saved flag on a job. */
 export function useToggleSavedJob() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -89,12 +103,11 @@ export function useToggleSavedJob() {
     onSuccess: (updatedJob) => {
       syncSavedJobsListCache(queryClient, updatedJob)
       queryClient.setQueryData(savedJobsKeys.detail(updatedJob.id), updatedJob)
-      queryClient.invalidateQueries({ queryKey: savedJobsKeys.lists() })
     },
   })
 }
 
-/** Delete a saved job. Removes from list and clears detail cache. */
+/** Delete a saved job. Invalidates all list caches. */
 export function useDeleteSavedJob() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -107,5 +120,5 @@ export function useDeleteSavedJob() {
 }
 
 // Re-export schemas and types so consumers import from a single place
-export { jobResumeSchema, savedJobSchema }
-export type { JobResumeDTO, SavedJobDTO }
+export { jobResumeSchema, paginatedJobsSchema, savedJobSchema }
+export type { JobResumeDTO, PaginatedJobsDTO, SavedJobDTO }
