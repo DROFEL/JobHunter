@@ -17,6 +17,7 @@ from job_scraper.search_worker import handle_search
 
 
 KAFKA_BOOTSTRAP = get_settings().kafka_bootstrap_servers
+_sem = asyncio.Semaphore(get_settings().scraper_concurrency)
 
 
 def _make_consumer(group_id: str) -> Consumer:
@@ -34,6 +35,39 @@ async def _close_consumer(loop: asyncio.AbstractEventLoop, c: Consumer) -> None:
         await asyncio.wait_for(loop.run_in_executor(None, c.close), timeout=3.0)
     except Exception:
         pass
+
+
+async def _scrape_task(
+    url: str, posting_id: str, attempt: int, links: list, tracer, logger
+) -> None:
+    try:
+        with tracer.start_as_current_span("postings.scrape.process", links=links) as span:
+            span.set_attribute("kafka.topic", "postings.scrape")
+            span.set_attribute("kafka.key", posting_id)
+            try:
+                await process_scrape_request(url=url, posting_id=posting_id, attempt=attempt)
+            except Exception as e:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR)
+                logger.exception(f"Unhandled error for posting_id={posting_id} at {url}")
+    finally:
+        _sem.release()
+
+
+async def _search_task(payload: dict, tracer, logger) -> None:
+    try:
+        headers = payload.pop("_headers", {})
+        ctx = propagate.extract(headers)
+        with tracer.start_as_current_span("searches.discover.handle", context=ctx) as span:
+            span.set_attribute("kafka.topic", "searches.discover")
+            try:
+                await handle_search(payload)
+            except Exception as e:
+                span.record_exception(e)
+                span.set_status(StatusCode.ERROR)
+                logger.exception(f"Search discovery failed for payload={payload}")
+    finally:
+        _sem.release()
 
 
 async def _run_scrape_consumer() -> None:
@@ -64,7 +98,6 @@ async def _run_scrape_consumer() -> None:
                 posting_url = payload["url"]
                 attempt = int(payload.get("attempt", 0))
             except (json.JSONDecodeError, KeyError, TypeError):
-                # backwards-compat: old messages were raw URL strings
                 posting_url = raw_value
                 attempt = 0
 
@@ -72,15 +105,9 @@ async def _run_scrape_consumer() -> None:
             parent_ctx = propagate.extract(headers)
             parent_span_ctx = trace.get_current_span(parent_ctx).get_span_context()
             links = [Link(parent_span_ctx)] if parent_span_ctx.is_valid else []
-            with tracer.start_as_current_span("postings.scrape.process", links=links) as span:
-                span.set_attribute("kafka.topic", msg.topic())
-                span.set_attribute("kafka.key", posting_id)
-                try:
-                    await process_scrape_request(url=posting_url, posting_id=posting_id, attempt=attempt)
-                except Exception as e:
-                    span.record_exception(e)
-                    span.set_status(StatusCode.ERROR)
-                    logger.exception(f"Unhandled error for posting_id={posting_id} at {posting_url}")
+
+            await _sem.acquire()
+            asyncio.create_task(_scrape_task(posting_url, posting_id, attempt, links, tracer, logger))
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (postings.scrape)")
     finally:
@@ -112,15 +139,10 @@ async def _run_search_consumer() -> None:
                 continue
 
             headers = {k: v.decode("utf-8", errors="replace") for k, v in (msg.headers() or [])}
-            ctx = propagate.extract(headers)
-            with tracer.start_as_current_span("searches.discover.handle", context=ctx) as span:
-                span.set_attribute("kafka.topic", msg.topic())
-                try:
-                    await handle_search(payload)
-                except Exception as e:
-                    span.record_exception(e)
-                    span.set_status(StatusCode.ERROR)
-                    logger.exception(f"Search discovery failed for payload={payload}")
+            payload["_headers"] = headers
+
+            await _sem.acquire()
+            asyncio.create_task(_search_task(payload, tracer, logger))
     except asyncio.CancelledError:
         logger.info("Graceful shutdown (searches.discover)")
     finally:

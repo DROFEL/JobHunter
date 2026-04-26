@@ -100,8 +100,36 @@ The system is split into three backend services that communicate through a centr
 This project is partly a learning exercise, designed as if it would run in production for many users. Scraping, LLM extraction, and auto-applying are slow, resource-heavy, and fully asynchronous — so they live in dedicated worker services rather than inside the API. The frontend submits a job and moves on; Kafka holds it in the queue until a worker picks it up. Consumer groups guarantee that only one worker instance processes each job, which means scaling is trivial: if a worker runs out of resources, spinning up a second instance immediately adds capacity with no code or config changes. Resource distribution stays practical and predictable.
 
 ### Monitoring
-All services emit telemetry to an **OTel Collector**, which fans it out to Jaeger (traces), Prometheus (metrics), and Elasticsearch (logs). Grafana sits on top as the unified dashboard. Gmail integration is planned for monitoring application email responses and otp codes and registration emails for auto-applier.
 
-## Scraper Service architecture
+All services emit telemetry to an **OTel Collector**, which fans it out to three backends:
+
+- **Jaeger** — distributed traces (`:16686`)
+- **Prometheus** — metrics (`:9090`)
+- **Elasticsearch + Grafana** — structured logs and unified dashboards (`:3000`)
+
+**Trace propagation across Kafka**
+
+Trace context is injected into Kafka message headers on produce (`propagate.inject`) and extracted on consume (`propagate.extract`). This links the WebAPI span that triggered a scrape to the scraper span that processed it — a single trace ID covers the full journey from HTTP request through the queue to the worker, even across process and service boundaries. In Jaeger, this shows up as a connected trace with a link between the producer and consumer spans rather than a gap.
+
+**Log–trace correlation**
+
+Every log line emitted while a span is active is enriched with the current `trace_id`. The console formatter prints a short 8-character prefix (`[a3f2c1b0]`) for quick visual scanning. The OTel log exporter ships the full `trace_id` as a structured field to Elasticsearch, so you can paste a trace ID from Jaeger directly into a Grafana log query and see every log line from that exact request — across all services — in one view.
+
+---
+
+## Scraper Service Architecture
+
+![High Level Architecture View of scraper service](docs/screenshots/Scraper_service_architecture.png)
+
+Both Kafka topics pass through a shared asyncio semaphore before work is dispatched. The semaphore provides backpressure: each consumer blocks on `await sem.acquire()` before spawning a task, so when `SCRAPER_CONCURRENCY` tasks are already running both consumers stop polling Kafka entirely until a slot opens. Every task releases the semaphore in `finally`, guaranteeing the slot is always returned. Set `SCRAPER_CONCURRENCY` in `.env` to tune throughput vs. resource usage.
+
+**Discovery flow (`searches.discover`)** — The search controller uses a strategy pattern to delegate to a platform-specific searcher (LinkedIn today; Indeed, Glassdoor, and others planned). Each searcher fetches a page of job cards from its board's API and returns a list of posting URLs. The controller upserts the discovered postings into PostgreSQL, then publishes each new posting as an individual message to `postings.scrape` — decoupling discovery from scraping so each concern scales and retries independently.
+
+**Scrape flow (`postings.scrape`)** — The scrape controller first checks the MinIO HTML cache; if the page was fetched before (e.g. on a previous attempt) the cached HTML is reused, skipping the browser entirely. On a cache miss, fetching branches by URL:
+
+- **LinkedIn URLs** — the unauthorized LinkedIn scraper runs first. For onsite applications, the page already contains the job description and some structured fields, so these are passed directly to the postprocessor with partial data pre-populated. For offsite applications, the authorized LinkedIn scraper (using stored session cookies from MinIO) retrieves the external apply URL, which is then handed off to the generic scraper.
+- **All other URLs** — the generic Playwright scraper fetches the page with a headless browser.
+
+Once the raw page text is obtained, the **postprocessor controller** saves the HTML to the MinIO cache and runs three sequential steps: structured field extraction via OpenRouter LLM (title, company, salary, skills, dates), a company lookup to fetch or create a company profile, and finally summary generation — which pulls the user's personal profile context from PostgreSQL to produce a tailored job summary. The completed posting data is then written back to PostgreSQL.
 
 ---

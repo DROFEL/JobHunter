@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     # Kafka
     kafka_bootstrap_servers: str = "localhost:9094"
+    scraper_concurrency: int = 10
 
     # OpenRouter AI
     open_router_sk: str = ""
