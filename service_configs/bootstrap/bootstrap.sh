@@ -37,7 +37,7 @@ create_minio_buckets() {
   local buckets=("resumes" "posting-artifacts" "crawler-state")
   # Use mc (MinIO client) inside the minio container
   docker exec "$(docker compose ps -q minio)" sh -c \
-    "mc alias set local http://localhost:9000 minioadmin minioadmin 2>/dev/null || true"
+    "mc alias set local http://localhost:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin} 2>/dev/null || true"
   for bucket in "${buckets[@]}"; do
     docker exec "$(docker compose ps -q minio)" sh -c \
       "mc mb --ignore-existing local/$bucket"

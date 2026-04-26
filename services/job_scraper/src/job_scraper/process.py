@@ -1,6 +1,6 @@
-import json, os, threading, time
-from dotenv import load_dotenv
+import json, threading, time
 from langchain_openrouter import ChatOpenRouter
+from common.config import get_settings
 from typing import Optional, List
 from pydantic import BaseModel, Field, HttpUrl
 from datetime import datetime
@@ -25,7 +25,7 @@ class _RateLimiter:
 
 
 _openrouter_limiter = _RateLimiter(
-    calls_per_second=float(os.environ.get("OPENROUTER_RPS", "1.0"))
+    calls_per_second=get_settings().openrouter_rps
 )
 
 
@@ -74,11 +74,10 @@ def load_schema(path: str) -> dict:
         return json.load(f)
 
 
-def get_llm(model:str = "google/gemini-3.1-flash-lite-preview"):
-    load_dotenv()
-    api_key = os.getenv("OPEN_ROUTER_SK")
+def get_llm(model: str = "google/gemini-3.1-flash-lite-preview"):
+    api_key = get_settings().open_router_sk
     if not api_key:
-        raise ValueError("OPEN_ROUTER_SK is not set in .env")
+        raise ValueError("OPEN_ROUTER_SK is not set")
 
     return ChatOpenRouter(
         model=model,

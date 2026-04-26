@@ -1,10 +1,11 @@
 import logging
-import os
+import random
 from dataclasses import dataclass, field
 
 from crawlee.crawlers import PlaywrightCrawler
 from crawlee.storage_clients import MemoryStorageClient
 
+from common.config import get_settings
 from common.logging_config import setup_logging
 from job_scraper.extractors.generic_extractor import extract_text
 from job_scraper.scrapers.models import FetchedPage, ScrapedJob
@@ -14,6 +15,14 @@ from job_scraper.scrapers.models import FetchedPage, ScrapedJob
 class FetchResult:
     llm_text: str
     pre_extracted: ScrapedJob | None = field(default=None)
+
+
+def _pick_linkedin_account() -> tuple[str, str]:
+    accounts = get_settings().linkedin_accounts
+    if not accounts:
+        return "", ""
+    account = random.choice(accounts)
+    return account.get("email", ""), account.get("password", "")
 
 
 async def fetch_page(url: str) -> FetchResult:
@@ -65,9 +74,8 @@ async def _fetch_linkedin(url: str) -> FetchResult:
     from job_scraper.scrapers.html_cache import load_html, save_html
     from job_scraper.scrapers.linkedin_scraper import LinkedInScraper
 
-    proxy = os.environ.get("LINKEDIN_PROXY", "")
-    username = os.environ.get("LINKEDIN_USERNAME", "")
-    password = os.environ.get("LINKEDIN_PASSWORD", "")
+    proxy = get_settings().proxy
+    username, password = _pick_linkedin_account()
 
     cached_html = load_html(url)
     if cached_html:

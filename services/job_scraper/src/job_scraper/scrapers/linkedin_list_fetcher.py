@@ -1,8 +1,8 @@
-import os
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
+from common.config import get_settings
 from bs4 import BeautifulSoup
 
 _BASE_URL = "https://www.linkedin.com"
@@ -60,7 +60,7 @@ def parse_cards(html: str) -> list[DiscoveredPosting]:
 
 
 def fetch(search_url: str, results_wanted: int = _PAGE_SIZE) -> list[DiscoveredPosting]:
-    proxy = os.environ.get("LINKEDIN_PROXY")
+    proxy = get_settings().proxy or None
     session = requests.Session()
     session.headers.update(_HEADERS)
     if proxy:

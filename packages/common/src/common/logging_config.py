@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import sys
 
 from opentelemetry import trace as _otrace
@@ -85,8 +84,10 @@ _otel_handler: _JsonOtelHandler | None = None
 
 
 def _init_otel_handler(level: int) -> _JsonOtelHandler | None:
-    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
-    service_name = os.environ.get("OTEL_SERVICE_NAME", __name__)
+    from common.config import get_settings
+    s = get_settings()
+    endpoint = s.otel_exporter_otlp_endpoint
+    service_name = s.otel_service_name or __name__
     try:
         provider = LoggerProvider(resource=Resource.create({"service.name": service_name}))
         provider.add_log_record_processor(

@@ -1,8 +1,14 @@
+ifneq (,$(wildcard ./.env))
+  include .env
+  export
+endif
+
 .PHONY: setup start frontend api scraper applier sync generate_migration apply_migration
 
 MSG ?= update schema
 
 setup:
+	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example — fill in secrets before running")
 	docker compose -f compose.yml up -d
 	cd frontend && deno install
 	$(MAKE) sync

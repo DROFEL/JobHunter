@@ -2,24 +2,21 @@ import asyncio
 import concurrent.futures
 import json
 import logging
-import os
 import signal
 
-from dotenv import load_dotenv
 from confluent_kafka import Consumer
 from opentelemetry import propagate, trace
 from opentelemetry.trace import Link, StatusCode
 
+from common.config import get_settings
 from common.logging_config import get_logger, setup_logging
 from common.tracing_config import get_tracer
-
-load_dotenv()
 from db import Base, engine
 from job_scraper.process_request import process_scrape_request
 from job_scraper.search_worker import handle_search
 
 
-KAFKA_BOOTSTRAP = "localhost:9094"
+KAFKA_BOOTSTRAP = get_settings().kafka_bootstrap_servers
 
 
 def _make_consumer(group_id: str) -> Consumer:
@@ -133,7 +130,7 @@ async def _run_search_consumer() -> None:
 
 async def async_main():
     Base.metadata.create_all(bind=engine)
-    log_level = getattr(logging, os.environ.get("LOG_LEVEL", "INFO").upper(), logging.INFO)
+    log_level = getattr(logging, get_settings().log_level.upper(), logging.INFO)
     setup_logging(level=log_level)
     logger = get_logger(__name__)
 

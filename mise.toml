@@ -1,3 +1,6 @@
+[env]
+_.file = ".env"
+
 [tools]
 deno = "latest"
 node = "24"

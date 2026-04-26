@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "minio",
     "pydantic>=2.0,<3",
+    "pydantic-settings>=2.0,<3",
     "opentelemetry-api",
     "opentelemetry-sdk",
     "opentelemetry-exporter-otlp-proto-grpc",

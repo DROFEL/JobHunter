@@ -1,8 +1,11 @@
 from minio import Minio
 
+from common.config import get_settings
+
+_s = get_settings()
 client = Minio(
-    "localhost:9000",
-    access_key="minioadmin",
-    secret_key="minioadmin",
-    secure=False,  # use False unless you configured TLS
+    _s.minio_endpoint,
+    access_key=_s.minio_root_user,
+    secret_key=_s.minio_root_password,
+    secure=False,
 )

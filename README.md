@@ -37,7 +37,7 @@ Store your skills, languages, education, and work history once. This data is use
 - [x] Resume workbench — build a tailored resume from profile + position data, export as PDF
 - [x] Single-page job scraping — crawl a posting URL, extract structured data, generate a summary with LLM
 - [ ] AI assistant in the resume workbench — inline suggestions for summary and experience bullets, skills
-- [ ] Bulk job board scraping — auto-discover and import new postings on a schedule, with a UI for configuring scrape targets and settings
+- [X] Bulk job board scraping — auto-discover and import new postings on a schedule, with a UI for configuring scrape targets and settings (Linkedin only at the moment)
 - [ ] Auto-apply — fill and submit applications automatically using browser automation + LLM HITL
 - [ ] Gmail monitoring — track application progress by reading incoming OTP codes and status update emails
 
@@ -46,31 +46,35 @@ Store your skills, languages, education, and work history once. This data is use
 ## Running Locally (Tested only on Linux)
 
 **Prerequisites:** Make, Docker Compose, Python 3.12, Deno, `uv`
-Project uses mise to manage this dependencies except for docker and make so you can run in root folder:
-```
-mise trust
-mise install
+
+Project uses mise to manage tool versions (except Docker and Make):
+```bash
+mise trust && mise install
 ```
 
-**Environment setup (once per machine):**
+**1. Configure environment**
 
-The scraper requires an OpenRouter API key. Create `services/job_scraper/.env`:
+`make setup` auto-creates `.env` from `.env.example` on first run. Open it and fill in your secrets:
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPEN_ROUTER_SK` | Yes | [OpenRouter](https://openrouter.ai) API key — used for LLM extraction |
+| `LINKEDIN_ACCOUNTS` | No | JSON array of `{"email","password"}` objects for authenticated LinkedIn scraping |
+| `PROXY` | No | HTTP proxy for outbound scraping requests |
+
+All other values have working defaults for local development.
+
+**2. Start everything**
 
 ```bash
-echo "OPEN_ROUTER_SK=sk-or-v1-your-key" >> services/job_scraper/.env
-```
-
-```bash
-# Setup: start infrastructure, install dependencies, apply configurations
-# NEEDS TO BE RUN ONLY ONE PER ENVIRONMENT
+# First time only: init .env, start infrastructure, install deps, create Kafka topics + MinIO buckets
 make setup
 
-# Start the API
+# Start all services (API, scraper, frontend)
 make start
-
-#Then go to http://localhost:5173
-
 ```
+
+Then open [http://localhost:5173](http://localhost:5173).
 
 > To run the frontend with mocked API responses (no backend required):
 > ```bash
@@ -95,6 +99,9 @@ The system is split into three backend services that communicate through a centr
 
 This project is partly a learning exercise, designed as if it would run in production for many users. Scraping, LLM extraction, and auto-applying are slow, resource-heavy, and fully asynchronous — so they live in dedicated worker services rather than inside the API. The frontend submits a job and moves on; Kafka holds it in the queue until a worker picks it up. Consumer groups guarantee that only one worker instance processes each job, which means scaling is trivial: if a worker runs out of resources, spinning up a second instance immediately adds capacity with no code or config changes. Resource distribution stays practical and predictable.
 
+### Monitoring
 All services emit telemetry to an **OTel Collector**, which fans it out to Jaeger (traces), Prometheus (metrics), and Elasticsearch (logs). Grafana sits on top as the unified dashboard. Gmail integration is planned for monitoring application email responses and otp codes and registration emails for auto-applier.
+
+## Scraper Service architecture
 
 ---

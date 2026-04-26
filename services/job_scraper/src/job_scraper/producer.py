@@ -1,9 +1,10 @@
 from confluent_kafka import Producer
 from opentelemetry import propagate
+from common.config import get_settings
 from common.logging_config import get_logger
 
 conf = {
-    "bootstrap.servers": "localhost:9094",
+    "bootstrap.servers": get_settings().kafka_bootstrap_servers,
 }
 
 producer = Producer(conf)

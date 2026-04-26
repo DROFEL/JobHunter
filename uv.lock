@@ -443,6 +443,7 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp-proto-grpc" },
     { name = "opentelemetry-sdk" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
 ]
 
 [package.metadata]
@@ -452,6 +453,7 @@ requires-dist = [
     { name = "opentelemetry-exporter-otlp-proto-grpc" },
     { name = "opentelemetry-sdk" },
     { name = "pydantic", specifier = ">=2.0,<3" },
+    { name = "pydantic-settings", specifier = ">=2.0,<3" },
 ]
 
 [[package]]
