@@ -9,6 +9,19 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
   "browser-use",
+  "playwright",
+  "langgraph>=0.2",
+  "langgraph-checkpoint-postgres>=0.1",
+  "langchain",
+  "langchain-openrouter",
+  "confluent-kafka",
+  "pydantic>=2.0",
+  "minio",
+  "psycopg[binary]",
+  "psycopg-pool",
+  "opentelemetry-api",
+  "opentelemetry-sdk",
+  "opentelemetry-exporter-otlp-proto-grpc",
   "db",
   "common",
 ]
