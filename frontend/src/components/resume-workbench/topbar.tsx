@@ -1,7 +1,8 @@
-import { Link } from "@tanstack/react-router"
-import { BriefcaseBusiness, FileText, Library, ListChecks, Settings, Sparkles } from "lucide-react"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { BriefcaseBusiness, FileText, Library, ListChecks, LogOut, Settings, Sparkles } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button.tsx"
+import { clearAuthId, getAuthId } from "@/api/auth.ts"
+import { Button, buttonVariants } from "@/components/ui/button.tsx"
 import { cn } from "@/utils/utils.ts"
 
 const navigation = [
@@ -13,6 +14,14 @@ const navigation = [
 ]
 
 export function Topbar() {
+  const navigate = useNavigate()
+  const authId = getAuthId()
+
+  function handleLogout() {
+    clearAuthId()
+    navigate({ to: "/login" })
+  }
+
   return (
     <header className="no-print sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <div className="flex w-full items-center justify-between gap-4 px-4 py-4 sm:px-6">
@@ -41,6 +50,16 @@ export function Topbar() {
             </Link>
           ))}
         </nav>
+
+        <div className="flex items-center gap-3">
+          {authId && (
+            <span className="hidden text-sm text-muted-foreground sm:inline">{authId}</span>
+          )}
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+            <LogOut className="size-4" />
+            <span className="hidden sm:inline">Logout</span>
+          </Button>
+        </div>
       </div>
     </header>
   )

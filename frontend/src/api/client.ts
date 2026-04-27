@@ -1,6 +1,16 @@
 import { z } from "zod"
 
+import { getAuthId } from "@/api/auth.ts"
+
 const API_BASE = (import.meta.env.VITE_WEB_API_URL as string | undefined) ?? "/api"
+
+function authHeaders(): Record<string, string> {
+  const id = getAuthId()
+  if (!id) {
+    throw new ApiError(401, "Not authenticated")
+  }
+  return { Authentication: id }
+}
 
 export class ApiError extends Error {
   constructor(
@@ -33,7 +43,7 @@ async function apiFetch<T>(
 
   const init: RequestInit = {
     method,
-    headers: {"Authentication": "1"}
+    headers: authHeaders(),
   }
 
   if (body !== undefined) {
@@ -70,7 +80,10 @@ export const api = {
     apiFetch("PATCH", path, schema, body),
 
   delete: async (path: string): Promise<void> => {
-    const res = await fetch(`${API_BASE}${path}`, { method: "DELETE" })
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    })
     if (!res.ok) {
       throw new ApiError(res.status, `DELETE ${path} → ${res.status} ${res.statusText}`)
     }
