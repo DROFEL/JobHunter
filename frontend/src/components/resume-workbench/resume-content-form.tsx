@@ -12,7 +12,7 @@ import { SkillsSection } from "./resume-form/skills-section.tsx"
 import { WorkExperienceSection } from "./resume-form/work-experience-section.tsx"
 import { LanguagesToggleSection } from "./resume-form/languages-toggle-section.tsx"
 
-const SUMMARY_LIMIT = 500
+const SUMMARY_LIMIT = 260
 const PROJECT_DESC_LIMIT = 200
 
 function SortableSection({ id, children }: { id: ResumeSectionId; children: ReactNode }) {
@@ -36,26 +36,20 @@ function SortableSection({ id, children }: { id: ResumeSectionId; children: Reac
 }
 
 export function ResumeContentForm() {
-  const { data, updateField } = useResumeForm()
+  const {
+    data,
+    updateField,
+    onGenerateSummary,
+    onImproveWorkExperience,
+    onGenerateProjectDescription,
+    onGenerateSkills,
+    aiLoadingKey,
+  } = useResumeForm()
   const { data: settings = defaultProfileSettings } = useProfileSettingsQuery()
   const skillPool = settings.skillPool.map((skill) => skill.trim()).filter(Boolean)
 
   const order: ResumeSectionId[] = (data.sectionOrder as ResumeSectionId[] | undefined)
     ?? [...RESUME_SECTION_IDS]
-
-  function handleGenerateSummary() {
-    const headline = data.position || "Software engineer"
-    const highlightedSkills = data.skillTypes
-      .flatMap((st) => st.skills)
-      .filter(Boolean)
-      .slice(0, 3)
-      .join(", ")
-
-    updateField(
-      "summary",
-      `${headline} with a track record of shipping clear, high-quality interfaces. Strongest focus areas include ${highlightedSkills || "React, TypeScript, and product collaboration"} with an emphasis on accessible, measurable user experiences.`,
-    )
-  }
 
   function renderSection(id: ResumeSectionId): ReactNode {
     switch (id) {
@@ -67,7 +61,8 @@ export function ResumeContentForm() {
             summaryLimit={SUMMARY_LIMIT}
             onPositionChange={(value) => updateField("position", value)}
             onSummaryChange={(value) => updateField("summary", value)}
-            onSuggestSummary={handleGenerateSummary}
+            onSuggestSummary={onGenerateSummary}
+            isLoading={aiLoadingKey === "summary"}
           />
         )
       case "education":
@@ -83,8 +78,9 @@ export function ResumeContentForm() {
         return (
           <WorkExperienceSection
             experiences={data.experiences}
-            targetPosition=""
             onChange={(value) => updateField("experiences", value)}
+            onImproveExperience={onImproveWorkExperience}
+            aiLoadingKey={aiLoadingKey}
           />
         )
       case "projects":
@@ -93,6 +89,8 @@ export function ResumeContentForm() {
             projects={data.projects}
             projectDescriptionLimit={PROJECT_DESC_LIMIT}
             onChange={(value) => updateField("projects", value)}
+            onSuggestDescription={onGenerateProjectDescription}
+            aiLoadingKey={aiLoadingKey}
           />
         )
       case "skills":
@@ -101,6 +99,8 @@ export function ResumeContentForm() {
             skillTypes={data.skillTypes}
             skillPool={skillPool}
             onChange={(value) => updateField("skillTypes", value)}
+            onSuggestSkills={onGenerateSkills}
+            isLoading={aiLoadingKey === "skills"}
           />
         )
       case "languages":

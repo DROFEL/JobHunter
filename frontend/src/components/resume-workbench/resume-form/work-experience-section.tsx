@@ -1,4 +1,4 @@
-import { Plus, Sparkles, Trash2, GripVertical } from "lucide-react"
+import { Loader2, Plus, Sparkles, Trash2, GripVertical } from "lucide-react"
 import { Reorder } from "motion/react"
 
 import type { ExperienceItem as ResumeExperienceItem } from "@/components/resume-workbench/types.ts"
@@ -10,14 +10,16 @@ import { createBlankExperience, createId } from "@/utils/resume-form-helpers.ts"
 
 interface WorkExperienceSectionProps {
   experiences: ResumeExperienceItem[]
-  targetPosition: string
   onChange: (experiences: ResumeExperienceItem[]) => void
+  onImproveExperience: (experienceId: string) => void
+  aiLoadingKey: string | null
 }
 
 export function WorkExperienceSection({
   experiences,
-  targetPosition,
   onChange,
+  onImproveExperience,
+  aiLoadingKey,
 }: WorkExperienceSectionProps) {
   function updateExperienceById(experienceId: string, updates: Partial<ResumeExperienceItem>) {
     onChange(
@@ -95,47 +97,13 @@ export function WorkExperienceSection({
     onChange(experiences.filter((experience) => experience.id !== experienceId))
   }
 
-  function suggestAchievement() {
-    const suggestion = `Delivered ${
-      targetPosition.toLowerCase() || "product"
-    } improvements that simplified user flows and improved handoff quality across design and engineering.`
-
-    if (experiences.length === 0) {
-      onChange([
-        {
-          ...createBlankExperience(),
-          points: [{ id: createId("point"), text: suggestion }],
-        },
-      ])
-      return
-    }
-
-    const firstExperience = experiences[0]
-    const emptyPoint = firstExperience.points.find((point) => point.text.trim().length === 0)
-
-    if (emptyPoint) {
-      updateWorkPoint(firstExperience.id, emptyPoint.id, suggestion)
-      return
-    }
-
-    updateExperienceById(firstExperience.id, {
-      points: [...firstExperience.points, { id: createId("point"), text: suggestion }],
-    })
-  }
-
   return (
     <section className="space-y-4 rounded-xl border border-border/60 bg-accent/20 p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold">Work Experience</h3>
-          <p className="text-sm text-muted-foreground">
-            Add multiple companies and drag any achievement row to reorder vertically.
-          </p>
-        </div>
-        <Button type="button" size="sm" variant="ghost" onClick={suggestAchievement}>
-          <Sparkles className="size-3.5" />
-          <span>AI Suggest</span>
-        </Button>
+      <div>
+        <h3 className="text-lg font-semibold">Work Experience</h3>
+        <p className="text-sm text-muted-foreground">
+          Add multiple companies and drag any achievement row to reorder vertically.
+        </p>
       </div>
 
       <Reorder.Group
@@ -208,6 +176,21 @@ export function WorkExperienceSection({
                   <Button type="button" variant="outline" onClick={() => addWorkPoint(experience.id)}>
                     <Plus className="size-4" />
                     <span>Add Achievement</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onImproveExperience(experience.id)}
+                    disabled={aiLoadingKey !== null}
+                  >
+                    {aiLoadingKey === `experience-${experience.id}`
+                      ? <Loader2 className="size-3.5 animate-spin" />
+                      : <Sparkles className="size-3.5" />
+                    }
+                    <span>
+                      {aiLoadingKey === `experience-${experience.id}` ? "Improving..." : "AI Improve"}
+                    </span>
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => removeExperienceById(experience.id)}>
                     <Trash2 className="size-4" />

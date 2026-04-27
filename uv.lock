@@ -4951,6 +4951,7 @@ dependencies = [
     { name = "langchain-openrouter" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "tenacity" },
 ]
 
 [package.metadata]
@@ -4965,6 +4966,7 @@ requires-dist = [
     { name = "langchain-openrouter" },
     { name = "pydantic", specifier = ">=2.0,<3" },
     { name = "pydantic-settings", specifier = ">=2.0,<3" },
+    { name = "tenacity" },
 ]
 
 [[package]]

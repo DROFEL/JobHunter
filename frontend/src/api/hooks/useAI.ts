@@ -8,11 +8,24 @@ const aiGenerateResponseSchema = z.object({
 
 export type AICallType = "job_summary" | "resume_summary" | "work_experience"
 
+export type BuilderCallType =
+  | "resume_summary"
+  | "work_experience"
+  | "project_description"
+  | "skills_suggestion"
+
 interface AIGenerateRequest {
   call_type: AICallType
   prompt: string
   context?: string
   url?: string
+}
+
+interface BuilderGenerateRequest {
+  call_type: BuilderCallType
+  prompt: string
+  context?: string
+  items?: string[]
 }
 
 interface FetchPostingRequest {
@@ -24,6 +37,13 @@ export function useAIGenerate() {
   return useMutation({
     mutationFn: (body: AIGenerateRequest) =>
       api.post("/ai/generate", aiGenerateResponseSchema, body),
+  })
+}
+
+export function useBuilderGenerate() {
+  return useMutation({
+    mutationFn: (body: BuilderGenerateRequest) =>
+      api.post("/builder/generate", aiGenerateResponseSchema, body),
   })
 }
 

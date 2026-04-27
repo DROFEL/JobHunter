@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button.tsx"
 import { Input } from "@/components/ui/input.tsx"
@@ -11,6 +11,7 @@ interface ResumeSummarySectionProps {
   onPositionChange: (value: string) => void
   onSummaryChange: (value: string) => void
   onSuggestSummary: () => void
+  isLoading: boolean
 }
 
 export function ResumeSummarySection({
@@ -20,6 +21,7 @@ export function ResumeSummarySection({
   onPositionChange,
   onSummaryChange,
   onSuggestSummary,
+  isLoading,
 }: ResumeSummarySectionProps) {
   return (
     <section className="rounded-xl border border-border/60 bg-accent/10 p-5 pr-8 space-y-4">
@@ -37,9 +39,12 @@ export function ResumeSummarySection({
           <label className="text-sm font-medium text-foreground">Professional Summary</label>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>{summary.length}/{summaryLimit}</span>
-            <Button type="button" size="sm" variant="ghost" onClick={onSuggestSummary}>
-              <Sparkles className="size-3.5" />
-              <span>AI Suggest</span>
+            <Button type="button" size="sm" variant="ghost" onClick={onSuggestSummary} disabled={isLoading}>
+              {isLoading
+                ? <Loader2 className="size-3.5 animate-spin" />
+                : <Sparkles className="size-3.5" />
+              }
+              <span>{isLoading ? "Generating..." : "AI Suggest"}</span>
             </Button>
           </div>
         </div>

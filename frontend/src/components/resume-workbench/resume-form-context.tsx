@@ -17,7 +17,13 @@ interface ResumeFormContextValue {
   onJobMetaChange: ((fields: Partial<JobMeta>) => void) | undefined
   selectedJobId: string
   scrapeStatus: string | null
+  // AI handlers
   onGenerateSummary: () => void
+  onImproveWorkExperience: (experienceId: string) => void
+  onGenerateProjectDescription: (projectId: string) => void
+  onGenerateSkills: () => void
+  // "summary" | `experience-${id}` | `project-${id}` | "skills" | null
+  aiLoadingKey: string | null
 }
 
 export const ResumeFormContext = createContext<ResumeFormContextValue | null>(null)

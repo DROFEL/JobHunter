@@ -1,22 +1,26 @@
-import { Plus } from "lucide-react"
+import { Loader2, Plus, Sparkles } from "lucide-react"
 
 import type { ProjectItem } from "@/components/resume-workbench/types.ts"
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent } from "@/components/ui/card.tsx"
 import { Input } from "@/components/ui/input.tsx"
 import { Textarea } from "@/components/ui/textarea.tsx"
-import { createBlankProject } from "@/utils/resume-form-helpers.ts";
+import { createBlankProject } from "@/utils/resume-form-helpers.ts"
 
 interface ProjectsSectionProps {
   projects: ProjectItem[]
   projectDescriptionLimit: number
   onChange: (projects: ProjectItem[]) => void
+  onSuggestDescription: (projectId: string) => void
+  aiLoadingKey: string | null
 }
 
 export function ProjectsSection({
   projects,
   projectDescriptionLimit,
   onChange,
+  onSuggestDescription,
+  aiLoadingKey,
 }: ProjectsSectionProps) {
   function addProject() {
     onChange([...projects, createBlankProject()])
@@ -52,7 +56,24 @@ export function ProjectsSection({
 
             <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
               <span>Description</span>
-              <span>{project.description.length}/{projectDescriptionLimit}</span>
+              <div className="flex items-center gap-2">
+                <span>{project.description.length}/{projectDescriptionLimit}</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onSuggestDescription(project.id)}
+                  disabled={aiLoadingKey !== null}
+                >
+                  {aiLoadingKey === `project-${project.id}`
+                    ? <Loader2 className="size-3.5 animate-spin" />
+                    : <Sparkles className="size-3.5" />
+                  }
+                  <span>
+                    {aiLoadingKey === `project-${project.id}` ? "Generating..." : "AI Suggest"}
+                  </span>
+                </Button>
+              </div>
             </div>
 
             <Textarea

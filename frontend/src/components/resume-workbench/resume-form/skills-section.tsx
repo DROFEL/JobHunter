@@ -1,4 +1,4 @@
-import { Plus, Trash2, X, GripVertical } from "lucide-react"
+import { Loader2, Plus, Sparkles, Trash2, X, GripVertical } from "lucide-react"
 import { Reorder } from "motion/react"
 
 import type { SkillTypeItem } from "@/components/resume-workbench/types.ts"
@@ -16,9 +16,11 @@ interface SkillsSectionProps {
   skillTypes: SkillTypeItem[]
   skillPool: string[]
   onChange: (skillTypes: SkillTypeItem[]) => void
+  onSuggestSkills: () => void
+  isLoading: boolean
 }
 
-export function SkillsSection({ skillTypes, skillPool, onChange }: SkillsSectionProps) {
+export function SkillsSection({ skillTypes, skillPool, onChange, onSuggestSkills, isLoading }: SkillsSectionProps) {
   function updateSkillTypeById(skillTypeId: string, updates: Partial<SkillTypeItem>) {
     onChange(
       skillTypes.map((skillType) =>
@@ -98,11 +100,26 @@ export function SkillsSection({ skillTypes, skillPool, onChange }: SkillsSection
 
   return (
     <section className="space-y-4 rounded-xl border border-border/60 bg-accent/20 p-5">
-      <div>
-        <h3 className="text-lg font-semibold">Skills</h3>
-        <p className="text-sm text-muted-foreground">
-          Create skill types and drag skills from the global settings pool into each category.
-        </p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold">Skills</h3>
+          <p className="text-sm text-muted-foreground">
+            Create skill types and drag skills from the global settings pool into each category.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={onSuggestSkills}
+          disabled={isLoading || skillPool.length === 0}
+        >
+          {isLoading
+            ? <Loader2 className="size-3.5 animate-spin" />
+            : <Sparkles className="size-3.5" />
+          }
+          <span>{isLoading ? "Organizing..." : "AI Suggest"}</span>
+        </Button>
       </div>
 
       <Reorder.Group

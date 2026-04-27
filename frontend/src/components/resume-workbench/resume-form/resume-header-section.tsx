@@ -54,19 +54,6 @@ export function ResumeHeaderSection() {
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-foreground">Resume Headline</label>
-              <span className="text-xs text-muted-foreground">— printed on the PDF</span>
-            </div>
-            <Input
-              value={data.position}
-              onChange={(event) => updateField("position", event.target.value)}
-              placeholder={data.targetPosition || "e.g. Senior Software Engineer"}
-              className="border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
-            />
-          </div>
-
           <div className="min-w-0 space-y-2">
             <label className="text-sm font-medium text-foreground">Target Company</label>
             <Input

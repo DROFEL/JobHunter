@@ -8,6 +8,7 @@ from webapi.routes.profileSettings import router as profileSettings_router
 from webapi.routes.resumeTemplates import router as resumeTemplates_router
 from webapi.routes.jobs import router as jobs_router
 from webapi.routes.ai import router as ai_router
+from webapi.routes.builder import router as builder_router
 from webapi.routes.searches import router as searches_router
 from typing import Annotated
 from alembic.config import Config
@@ -50,6 +51,7 @@ app.include_router(profileSettings_router)
 app.include_router(resumeTemplates_router)
 app.include_router(jobs_router)
 app.include_router(ai_router)
+app.include_router(builder_router)
 app.include_router(searches_router)
 
 @app.get("/health")
