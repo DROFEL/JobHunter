@@ -1,13 +1,9 @@
-import logging
 import random
 from dataclasses import dataclass, field
 
-from crawlee.crawlers import PlaywrightCrawler
-from crawlee.storage_clients import MemoryStorageClient
-
 from common.config import get_settings
-from common.logging_config import setup_logging
-from job_scraper.extractors.generic_extractor import extract_text
+from job_scraper.extractors.markdown_extractor import to_markdown
+from job_scraper.scrapers import browser
 from job_scraper.scrapers.models import FetchedPage, ScrapedJob
 
 
@@ -37,42 +33,34 @@ async def fetch_page(url: str) -> FetchResult:
 
 
 async def _fetch_generic(url: str) -> FetchResult:
-    result = {"html": "", "frame_htmls": []}
+    parts: list[str] = []
 
-    crawler = PlaywrightCrawler(storage_client=MemoryStorageClient(), headless=False)
-
-    @crawler.router.default_handler
-    async def handler(context):
-        page = context.page
+    async with browser.new_page(headless=False) as page:
         try:
-            await page.wait_for_load_state("networkidle", timeout=10000)
+            await page.goto(url, wait_until="networkidle", timeout=10_000)
         except Exception:
-            await page.wait_for_load_state("load")
-        result["html"] = await page.content()
+            await page.goto(url, wait_until="load", timeout=30_000)
+
+        main_html = await page.content()
+        parts.append(to_markdown(main_html, base_url=page.url))
+
         for frame in page.frames[1:]:
             try:
-                result["frame_htmls"].append(await frame.content())
+                frame_html = await frame.content()
             except Exception:
-                pass
+                continue
+            cleaned = to_markdown(frame_html, base_url=frame.url)
+            if cleaned.strip():
+                parts.append(cleaned)
 
-    level = logging.getLogger().level
-    await crawler.run([url])
-    setup_logging(level)
-
-    parts = [extract_text(result["html"])]
-    for frame_html in result["frame_htmls"]:
-        cleaned = extract_text(frame_html)
-        if cleaned.strip():
-            parts.append(cleaned)
-
-    return FetchResult(llm_text="\n".join(parts))
+    return FetchResult(llm_text="\n".join(p for p in parts if p))
 
 
 async def _fetch_linkedin(url: str) -> FetchResult:
     from job_scraper.scrapers.linkedin_authenticated_scraper import LinkedInAuthenticatedScraper
     from job_scraper.extractors.linkedin_extractor import extract
     from job_scraper.scrapers.html_cache import load_html, save_html
-    from job_scraper.scrapers.linkedin_scraper import LinkedInScraper
+    from job_scraper.scrapers.linkedin_scraper import scrape_job_page
 
     proxy = get_settings().proxy
     username, password = _pick_linkedin_account()
@@ -81,7 +69,7 @@ async def _fetch_linkedin(url: str) -> FetchResult:
     if cached_html:
         page = FetchedPage(url=url, html=cached_html)
     else:
-        page = await LinkedInScraper(proxy=proxy).scrape_job_page(url)
+        page = await scrape_job_page(url)
         if page is None:
             return FetchResult(llm_text="")
         save_html(url, page.html)
@@ -94,7 +82,7 @@ async def _fetch_linkedin(url: str) -> FetchResult:
     if not job.external_application or not all((proxy, username, password)):
         return FetchResult(pre_extracted=job, llm_text=_job_to_llm_text(job))
 
-    apply_url = await LinkedInAuthenticatedScraper(proxy, username, password).get_apply_url(url)
+    apply_url = await LinkedInAuthenticatedScraper(username, password).get_apply_url(url)
     if not apply_url:
         return FetchResult(pre_extracted=job, llm_text=_job_to_llm_text(job))
 

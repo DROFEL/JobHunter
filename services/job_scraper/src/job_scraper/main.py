@@ -13,6 +13,7 @@ from common.logging_config import get_logger, setup_logging
 from common.tracing_config import get_tracer
 from db import Base, engine
 from job_scraper.process_request import process_scrape_request
+from job_scraper.scrapers import browser
 from job_scraper.search_worker import handle_search
 
 
@@ -172,6 +173,8 @@ async def async_main():
         await asyncio.gather(_run_scrape_consumer(), _run_search_consumer())
     except asyncio.CancelledError:
         logger.info("Consumer closed")
+    finally:
+        await browser.aclose()
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ ifneq (,$(wildcard ./.env))
   export
 endif
 
-.PHONY: setup start frontend api scraper applier sync generate_migration apply_migration
+.PHONY: setup start frontend api scraper applier sync generate_migration apply_migration setup-scraper
 
 MSG ?= update schema
 
@@ -12,10 +12,14 @@ setup:
 	docker compose -f compose.yml up -d
 	cd frontend && deno install
 	$(MAKE) sync
+	$(MAKE) setup-scraper
 	bash service_configs/bootstrap/bootstrap.sh
 
 sync:
 	uv sync --all-packages
+
+setup-scraper:
+	uv run --package job_scraper python -m camoufox fetch
 
 start:
 	trap 'kill 0' INT TERM; \

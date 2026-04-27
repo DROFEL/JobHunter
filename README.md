@@ -67,12 +67,14 @@ All other values have working defaults for local development.
 **2. Start everything**
 
 ```bash
-# First time only: init .env, start infrastructure, install deps, create Kafka topics + MinIO buckets
+# First time only: init .env, start infrastructure, install deps, fetch the camoufox browser (~150 MB), create Kafka topics + MinIO buckets
 make setup
 
 # Start all services (API, scraper, frontend)
 make start
 ```
+
+> The scraper uses [camoufox](https://github.com/daijro/camoufox) (anti-detect Firefox build) for browser automation. `make setup` runs `make setup-scraper` for you, which downloads the Camoufox Firefox binary into the venv. You can re-run `make setup-scraper` on its own if you ever wipe the cache.
 
 Then open [http://localhost:5173](http://localhost:5173).
 
@@ -128,7 +130,7 @@ Both Kafka topics pass through a shared asyncio semaphore before work is dispatc
 **Scrape flow (`postings.scrape`)** — The scrape controller first checks the MinIO HTML cache; if the page was fetched before (e.g. on a previous attempt) the cached HTML is reused, skipping the browser entirely. On a cache miss, fetching branches by URL:
 
 - **LinkedIn URLs** — the unauthorized LinkedIn scraper runs first. For onsite applications, the page already contains the job description and some structured fields, so these are passed directly to the postprocessor with partial data pre-populated. For offsite applications, the authorized LinkedIn scraper (using stored session cookies from MinIO) retrieves the external apply URL, which is then handed off to the generic scraper.
-- **All other URLs** — the generic Playwright scraper fetches the page with a headless browser.
+- **All other URLs** — the generic camoufox scraper fetches the page in a headed Firefox context, then converts the HTML to markdown via Crawl4AI's pruning markdown generator before handing the text to the postprocessor.
 
 Once the raw page text is obtained, the **postprocessor controller** saves the HTML to the MinIO cache and runs three sequential steps: structured field extraction via OpenRouter LLM (title, company, salary, skills, dates), a company lookup to fetch or create a company profile, and finally summary generation — which pulls the user's personal profile context from PostgreSQL to produce a tailored job summary. The completed posting data is then written back to PostgreSQL.
 
